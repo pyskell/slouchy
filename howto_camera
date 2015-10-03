@@ -1,0 +1,126 @@
+(slouchy)me@me-LINUX ~/PROJECTS/slouchy $ ipython
+WARNING: Attempting to work in a virtualenv. If you encounter problems, please install IPython inside the virtualenv.
+Python 2.7.6 (default, Jun 22 2015, 17:58:13) 
+Type "copyright", "credits" or "license" for more information.
+
+IPython 3.1.0 -- An enhanced Interactive Python.
+?         -> Introduction and overview of IPython's features.
+%quickref -> Quick reference.
+help      -> Python's own help system.
+object?   -> Details about 'object', use 'object??' for extra details.
+
+In [1]: import cv2
+
+In [2]: cap = cv2.VideoCapture(-1).close()
+VIDIOC_QUERYMENU: Invalid argument
+VIDIOC_QUERYMENU: Invalid argument
+VIDIOC_QUERYMENU: Invalid argument
+VIDIOC_QUERYMENU: Invalid argument
+VIDIOC_QUERYMENU: Invalid argument
+VIDIOC_QUERYMENU: Invalid argument
+VIDIOC_QUERYMENU: Invalid argument
+---------------------------------------------------------------------------
+AttributeError                            Traceback (most recent call last)
+<ipython-input-2-3989e2b14c74> in <module>()
+----> 1 cap = cv2.VideoCapture(-1).close()
+
+AttributeError: 'cv2.VideoCapture' object has no attribute 'close'
+
+In [3]: cap = cv2.VideoCapture(-1)
+VIDIOC_QUERYMENU: Invalid argument
+VIDIOC_QUERYMENU: Invalid argument
+VIDIOC_QUERYMENU: Invalid argument
+VIDIOC_QUERYMENU: Invalid argument
+VIDIOC_QUERYMENU: Invalid argument
+VIDIOC_QUERYMENU: Invalid argument
+VIDIOC_QUERYMENU: Invalid argument
+
+In [4]: cap.open
+cap.open
+
+In [4]: cap.open()
+---------------------------------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+<ipython-input-4-30096d670d8b> in <module>()
+----> 1 cap.open()
+
+TypeError: Required argument 'device' (pos 1) not found
+
+In [5]: cap.open(-1)
+VIDIOC_QUERYMENU: Invalid argument
+VIDIOC_QUERYMENU: Invalid argument
+VIDIOC_QUERYMENU: Invalid argument
+VIDIOC_QUERYMENU: Invalid argument
+VIDIOC_QUERYMENU: Invalid argument
+VIDIOC_QUERYMENU: Invalid argument
+VIDIOC_QUERYMENU: Invalid argument
+Out[5]: True
+
+In [6]: cap.isOpened()
+Out[6]: True
+
+In [7]: ret, frame = cap.read()
+
+In [8]: ret
+Out[8]: True
+
+In [9]: frame
+Out[9]: 
+array([[[138, 118,  97],
+        [140, 120,  99],
+        [138, 123, 101],
+        ..., 
+        [163, 157, 129],
+        [162, 158, 130],
+        [164, 160, 132]],
+
+       [[137, 119, 100],
+        [139, 121, 102],
+        [140, 123, 101],
+        ..., 
+        [170, 156, 130],
+        [167, 158, 131],
+        [168, 159, 132]],
+
+       [[133, 120, 105],
+        [133, 120, 105],
+        [139, 123, 104],
+        ..., 
+        [170, 160, 131],
+        [171, 161, 132],
+        [171, 161, 132]],
+
+       ..., 
+       [[104, 148, 128],
+        [103, 147, 127],
+        [ 94, 147, 127],
+        ..., 
+        [121, 162, 151],
+        [119, 161, 147],
+        [117, 159, 145]],
+
+       [[110, 145, 124],
+        [111, 146, 125],
+        [105, 146, 128],
+        ..., 
+        [118, 162, 148],
+        [118, 162, 148],
+        [116, 160, 146]],
+
+       [[110, 145, 124],
+        [109, 144, 123],
+        [105, 143, 126],
+        ..., 
+        [117, 161, 147],
+        [118, 160, 145],
+        [117, 159, 144]]], dtype=uint8)
+
+In [10]: cap.
+cap.get       cap.grab      cap.isOpened  cap.open      cap.read      cap.release   cap.retrieve  cap.set       
+
+In [10]: cap.
+cap.get       cap.grab      cap.isOpened  cap.open      cap.read      cap.release   cap.retrieve  cap.set       
+
+In [10]: cap.release()
+
+In [11]: 
