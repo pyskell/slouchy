@@ -2,8 +2,9 @@ import cv2
 
 from collections import namedtuple
 
+# Trying some pseudo-functional programming here.
 # Making use of namedtuples throughout this program to simulate a Maybe.
-# success is always true or false. 
+# success is always True or False, and indicates if the requested operation succeeded.
 # if success result is the calculation results
 # otherwise result is an error message
 Maybe = namedtuple('Maybe', ['success','result'])
@@ -25,7 +26,7 @@ def calculate_c_squared(MaybeFace):
   if MaybeFace.success:
     (x, y, w, h) = MaybeFace.result
   else:
-    return Maybe(False, "Error calculating c_squared. No face supplied.")
+    return MaybeFace
 
   print("x =", '{:d}'.format(x))
   print("y =", '{:d}'.format(y))
@@ -50,10 +51,9 @@ def take_picture(video_device):
 
   return Maybe(True, image)  
 
-# Detect if person is slouching 
-# MaybeImage -> Slouching
-def detect_slouching(MaybeImage):
-
+# Detect face in an image. Only ever one face, other numbers are an error.
+# MaybeImage -> MaybeFace
+def detect_face(MaybeImage):
   if MaybeImage.success:
     image = MaybeImage.result
   else:
@@ -63,7 +63,7 @@ def detect_slouching(MaybeImage):
   gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
   # Detect faces in the image
-  # faces will be an iterable object containing faces
+  # faces will be an iterable object
   faces = faceCascade.detectMultiScale(
       image=gray_image,
       scaleFactor=1.1,
@@ -72,40 +72,43 @@ def detect_slouching(MaybeImage):
       flags = cv2.cv.CV_HAAR_SCALE_IMAGE
   )
 
-  print("Found {0} faces!".format(len(faces)))
-
-  # Draw a box around the faces, and test the posture of each
-  for face in faces:
-    try:
-      (x, y, w, h) = face
-      MaybeFace = Maybe(True, face)
-    except:
-      MaybeFace = Maybe(False, "Error getting face positional data")
-
-    MaybeCSquared = calculate_c_squared(MaybeFace)
-
-    if MaybeCSquared.success:
-      current_posture = MaybeCSquared.result
-    else:
-      return MaybeCSquared
-
-    cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
-    print("y^2 + w^2 =", '{:d}'.format(current_posture))
-    print("Current posture / c_squared", '{:f}'
-          .format(float(current_posture) / c_squared_reference))
-
-    if current_posture >= (c_squared_reference * allowed_variance):
-      slouching = True
-    else:
-      slouching = False
-
   if len(faces) == 1:
-    return Maybe(True, slouching)
+    face = faces[0]
+    return Maybe(True, face)
 
   else:
-    cv2.imshow("Faces found" ,image)
+    # Draw a box around the faces
+    for (x, y, w, h) in faces:
+      cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
+
+    cv2.imshow("{:d} Faces found. Remove other faces. Press any key to quit.".format(len(faces)) ,image)
     cv2.waitKey(0)
     return Maybe(False, "Expected 1 face, found {:d} faces. Please make sure your face is in frame, and remove any other things detected as a face from the frame.".format(len(faces)))
+
+# Detect if person is slouching 
+# MaybeFace -> MaybeSlouching
+def detect_slouching(MaybeFace):
+
+  if MaybeFace.success:
+    MaybeCSquared = calculate_c_squared(MaybeFace)
+  else:
+    return MaybeFace
+
+  if MaybeCSquared.success:
+    current_posture = MaybeCSquared.result
+  else:
+    return MaybeCSquared
+
+  print("y^2 + w^2 =", '{:d}'.format(current_posture))
+  print("Current posture / c_squared", '{:f}'
+        .format(float(current_posture) / c_squared_reference))
+
+  if current_posture >= (c_squared_reference * allowed_variance):
+    slouching = True
+  else:
+    slouching = False
+
+  return Maybe(True, slouching)
 
 # import unicodecsv
 # csv_file = open('measurements.csv', 'r+')
@@ -116,8 +119,9 @@ def detect_slouching(MaybeImage):
 # writer.writerow(measurements)
 # csv_file.flush()
 
-image = take_picture(video_device)
-maybe_slouching = detect_slouching(image)
+maybe_image = take_picture(video_device)
+maybe_face = detect_face(maybe_image)
+maybe_slouching = detect_slouching(maybe_face)
 
 if maybe_slouching.success:
   print("Slouching:", maybe_slouching.result)
