@@ -1,6 +1,7 @@
 import cv2
 
 from collections import namedtuple
+from configobj import ConfigObj
 
 # Trying some pseudo-functional programming here.
 # Making use of namedtuples throughout this program to simulate a Maybe.
@@ -9,14 +10,16 @@ from collections import namedtuple
 # otherwise result is an error message
 Maybe = namedtuple('Maybe', ['success','result'])
 
-c_squared_reference = 51000 #58565 #59085 #70625 #52234 #55162
-allowed_variance    = 1.1 # Use to adjust sensitivity of slouch detection
-                          # 1 to 1.3 should be sane values.
-cascade_path        = "/home/me/PROJECTS/slouchy/haarcascade_frontalface_default.xml"
-image_path          = None
-video_device        = -1 # 0 / -1 for first device/ first device found
-                         # Or a file path string for a device (ex. "/dev/video0")
-                         # -1 should work for most people
+config              = ConfigObj('slouchy.ini')
+c_squared_reference = int(config['MAIN']['c_squared_reference'])
+allowed_variance    = float(config['MAIN']['allowed_variance'])
+cascade_path        = str(config['MAIN']['cascade_path'])
+
+#video_device can be an int or a string, so try int, and if not assume string
+try:
+  video_device = int(config['MAIN']['video_device'])
+except ValueError:
+  video_device = str(config['MAIN']['video_device'])
 
 # Create the haar cascade
 faceCascade = cv2.CascadeClassifier(cascade_path)
@@ -110,20 +113,14 @@ def detect_slouching(MaybeFace):
 
   return Maybe(True, slouching)
 
-# import unicodecsv
-# csv_file = open('measurements.csv', 'r+')
-# writer = unicodecsv.writer(csv_file)
-# local_time = time.strftime("%m / %d - %I:%M:%S") # This goes back in the face detecting loop if needed.
-# headers = ["local_time","x", "y", "w", "h", "current_posture", "c_squared", "allowed_variance", "status"]
-# writer.writerow(headers)
-# writer.writerow(measurements)
-# csv_file.flush()
+def main():
+  maybe_image = take_picture(video_device)
+  maybe_face = detect_face(maybe_image)
+  maybe_slouching = detect_slouching(maybe_face)
 
-maybe_image = take_picture(video_device)
-maybe_face = detect_face(maybe_image)
-maybe_slouching = detect_slouching(maybe_face)
+  if maybe_slouching.success:
+    print("Slouching:", maybe_slouching.result)
+  else:
+    print(maybe_slouching.result)
 
-if maybe_slouching.success:
-  print("Slouching:", maybe_slouching.result)
-else:
-  print(maybe_slouching.result)
+main()
