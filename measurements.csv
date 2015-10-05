@@ -1,13 +1,11 @@
 local_time,x,y,w,h,current_posture,c_squared,allowed_variance,status
-"time.struct_time(tm_year=2015, tm_mon=10, tm_mday=4, tm_hour=18, tm_min=29, tm_sec=29, tm_wday=6, tm_yday=277, tm_isdst=1)",289,201,144,144,61137,58565,1.15,UPRIGHT
-"time.struct_time(tm_year=2015, tm_mon=10, tm_mday=4, tm_hour=18, tm_min=29, tm_sec=36, tm_wday=6, tm_yday=277, tm_isdst=1)",293,211,160,160,70121,58565,1.15,SLOUCHING
-"time.struct_time(tm_year=2015, tm_mon=10, tm_mday=4, tm_hour=18, tm_min=29, tm_sec=46, tm_wday=6, tm_yday=277, tm_isdst=1)",283,177,156,156,55665,58565,1.15,UPRIGHT
-"time.struct_time(tm_year=2015, tm_mon=10, tm_mday=4, tm_hour=18, tm_min=29, tm_sec=50, tm_wday=6, tm_yday=277, tm_isdst=1)",276,194,170,170,66536,58565,1.15,UPRIGHT
-"time.struct_time(tm_year=2015, tm_mon=10, tm_mday=4, tm_hour=18, tm_min=29, tm_sec=54, tm_wday=6, tm_yday=277, tm_isdst=1)",279,206,177,177,73765,58565,1.15,SLOUCHING
-"time.struct_time(tm_year=2015, tm_mon=10, tm_mday=4, tm_hour=18, tm_min=30, tm_sec=7, tm_wday=6, tm_yday=277, tm_isdst=1)",266,161,172,172,55505,58565,1.15,UPRIGHT
-"time.struct_time(tm_year=2015, tm_mon=10, tm_mday=4, tm_hour=18, tm_min=30, tm_sec=15, tm_wday=6, tm_yday=277, tm_isdst=1)",265,182,190,190,69224,58565,1.15,SLOUCHING
-"time.struct_time(tm_year=2015, tm_mon=10, tm_mday=4, tm_hour=18, tm_min=30, tm_sec=19, tm_wday=6, tm_yday=277, tm_isdst=1)",268,164,187,187,61865,58565,1.15,UPRIGHT
-"time.struct_time(tm_year=2015, tm_mon=10, tm_mday=4, tm_hour=18, tm_min=30, tm_sec=31, tm_wday=6, tm_yday=277, tm_isdst=1)",258,133,186,186,52285,58565,1.15,UPRIGHT
-"time.struct_time(tm_year=2015, tm_mon=10, tm_mday=4, tm_hour=18, tm_min=30, tm_sec=36, tm_wday=6, tm_yday=277, tm_isdst=1)",260,158,201,201,65365,58565,1.15,UPRIGHT
-"time.struct_time(tm_year=2015, tm_mon=10, tm_mday=4, tm_hour=18, tm_min=30, tm_sec=40, tm_wday=6, tm_yday=277, tm_isdst=1)",264,177,212,212,76273,58565,1.15,SLOUCHING
-"time.struct_time(tm_year=2015, tm_mon=10, tm_mday=4, tm_hour=18, tm_min=30, tm_sec=46, tm_wday=6, tm_yday=277, tm_isdst=1)",269,167,203,203,69098,58565,1.15,SLOUCHING
+10 / 04 - 06:46:33,260,187,162,162,61213,58565,1.15,UPRIGHT
+10 / 04 - 06:46:35,262,187,162,162,61213,58565,1.15,UPRIGHT
+
+10 / 04 - 06:43:50,265,180,162,162,58644,58565,1.15,UPRIGHT
+10 / 04 - 06:43:54,265,190,172,172,65684,58565,1.15,UPRIGHT
+10 / 04 - 06:44:00,263,197,180,180,71209,58565,1.15,SLOUCHING
+10 / 04 - 06:44:09,242,163,178,178,58253,58565,1.15,UPRIGHT
+10 / 04 - 06:44:13,245,179,187,187,67010,58565,1.15,UPRIGHT
+10 / 04 - 06:44:19,238,194,198,198,76840,58565,1.15,SLOUCHING
+10 / 04 - 06:44:25,221,151,197,197,61610,58565,1.15,UPRIGHT

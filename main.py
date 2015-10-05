@@ -2,49 +2,53 @@ import cv2
 import sys
 import time
 
+from collections import namedtuple
 from exceptions import IOError
+
+# Making use of namedtuples throughout this program to simulate a Maybe.
+# success is always true or false. 
+# if success result is the calculation results
+# otherwise result is an error message
+Maybe = namedtuple('Maybe',['success','result'])
 
 # Threshold = x, scaling factor = x/y
 
 c_squared = 58565 #59085 #70625 #52234 #55162
 allowed_variance = 1.15 # May need to be above or below 1 for different people?
 #From sitting upright and as far back as normal
-
-# upright_y              = 156
-# upright_scaling_factor = 1 # 2.046512
-# upright_weighted       = upright_y * upright_scaling_factor
-# allowed_variance       = 1 # 1 = No variance, >1 = Some slouching below upright limit
-                           # Use small values
 cascade_path           = "/home/me/PROJECTS/slouchy/haarcascade_frontalface_default.xml"
 image_path             = None
 video_device           = -1 # 0 / -1 for first device/ first device found
                             # A file path string for a device (ex. "/dev/video0")
-# Code from https://realpython.com/blog/python/face-recognition-with-python/
-
 
 # Create the haar cascade
 faceCascade = cv2.CascadeClassifier(cascade_path)
 
-def detect_height(image_path=None):
-  # Just testing code...remove
-  if not image_path:
-    try:
-      image_path = sys.argv[1]
-      # Read the image
-      image = cv2.imread(image_path)
+# Take a picture with the camera. video_device -> Maybe image
+def take_picture(video_device):
 
-    except (NameError, IndexError):
-      cap = cv2.VideoCapture(video_device)
-      cap.open(video_device)
-      ret, image = cap.read()
+  cap = cv2.VideoCapture(video_device)
+  cap.open(video_device)
+  ret, image = cap.read()
 
-      if not ret:
-        raise IOError("Could not open camera. Please make sure video_device is set correctly.")
+  if not ret:
+    return Maybe(False, "Could not open camera. Please make sure video_device is set correctly.")
 
-      cap.release()
+  cap.release()
 
-  # Turns image to grayscale. OpenCV2 does a lot of its operations in grayscale.
-  gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
+  return Maybe(True, image)  
+
+# Detect if person is slouching 
+# MaybeImage -> Slouching
+def detect_slouching(MaybeImage):
+
+  if MaybeImage.success:
+    image = MaybeImage.result
+  else:
+    return MaybeImage
+
+  # Make image grayscale for processing
+  gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
   # Detect faces in the image
   # faces will be an iterable object containing faces
@@ -52,21 +56,17 @@ def detect_height(image_path=None):
       image=gray_image,
       scaleFactor=1.1,
       minNeighbors=5,
-      minSize=(30, 30),
+      minSize=(40, 40),
       flags = cv2.cv.CV_HAAR_SCALE_IMAGE
   )
-
-  # if len(faces) == 1:
 
   print("Found {0} faces!".format(len(faces)))
 
 
-  # Draw a line at the top of the face
+    # Draw a line at the top of the face
   for (x, y, w, h) in faces:
       cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
 
-      # x = float(x)
-      # print("Head height", x)
       print("x =", '{:d}'.format(x))
       print("y =", '{:d}'.format(y))
       print("w =", '{:d}'.format(w))
@@ -77,30 +77,31 @@ def detect_height(image_path=None):
       print("Current posture / c_squared", '{:f}'.format(float(current_posture) / c_squared))
 
       if current_posture >= (c_squared * allowed_variance):
-        status = "SLOUCHING"
+        slouching = True
       else:
-        status = "UPRIGHT"
+        slouching = False
 
-      print(status)
+  if len(faces) == 1:
+    return Maybe(True, slouching)
 
-  local_time = time.localtime() # NOT THE TIME I WANT
-  cv2.imshow("Faces found" ,image)
-  cv2.waitKey(0)
-  # ONLY RETURNING LAST DETECTED FACE...
-  return [local_time, x, y, w, h, current_posture, c_squared, allowed_variance, status]
-
-import unicodecsv
-csv_file = open('measurements.csv', 'r+')
-writer = unicodecsv.writer(csv_file)
-headers = ["local_time","x", "y", "w", "h", "current_posture", "c_squared", "allowed_variance", "status"]
-writer.writerow(headers)
-
-while True:
-  try:
-    measurements = detect_height()
-    writer.writerow(measurements)
-    csv_file.flush()
+  else:
+    cv2.imshow("Faces found" ,image)
     cv2.waitKey(0)
+    return Maybe(False, "Expected 1 face, found {:d} faces. Please make sure your face is in frame, and remove any other things detected as a face from the frame.".format(len(faces)))
 
-  except KeyboardInterrupt:
-    csv_file.close()
+# import unicodecsv
+# csv_file = open('measurements.csv', 'r+')
+# writer = unicodecsv.writer(csv_file)
+# local_time = time.strftime("%m / %d - %I:%M:%S") # This goes back in the face detecting loop if needed.
+# headers = ["local_time","x", "y", "w", "h", "current_posture", "c_squared", "allowed_variance", "status"]
+# writer.writerow(headers)
+# writer.writerow(measurements)
+# csv_file.flush()
+
+image = take_picture(video_device)
+maybe_slouching = detect_slouching(image)
+
+if maybe_slouching.success:
+  print("Slouching:", maybe_slouching.result)
+else:
+  print(maybe_slouching.result)
