@@ -1,3 +1,5 @@
+configobj==5.0.6
 configparser==3.3.0.post2
 cv2==1.0
+six==1.9.0
 wheel==0.24.0

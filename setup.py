@@ -1,11 +1,10 @@
-import configparser
+from configobj import ConfigObj
 
 from main import calculate_c_squared, take_picture, detect_face
 
 # Set initial values
 def setup():
-  config = configparser.ConfigParser()
-  config.read('slouchy.ini')
+  config = ConfigObj('slouchy.ini')
 
   #video_device can be an int or a string, so try int, and if not assume string
   try:
@@ -24,8 +23,6 @@ def setup():
     print("Error:", maybe_c_squared.result)
     return maybe_c_squared
 
-
-  with open('slouchy.ini', 'w') as configfile:
-    config.write(configfile)
+  config.write()
 
 setup()
