@@ -1,30 +1,42 @@
 import cv2
-import sys
-import time
 
 from collections import namedtuple
-from exceptions import IOError
 
 # Making use of namedtuples throughout this program to simulate a Maybe.
 # success is always true or false. 
 # if success result is the calculation results
 # otherwise result is an error message
-Maybe = namedtuple('Maybe',['success','result'])
+Maybe = namedtuple('Maybe', ['success','result'])
 
-# Threshold = x, scaling factor = x/y
-
-c_squared = 58565 #59085 #70625 #52234 #55162
-allowed_variance = 1.15 # May need to be above or below 1 for different people?
-#From sitting upright and as far back as normal
-cascade_path           = "/home/me/PROJECTS/slouchy/haarcascade_frontalface_default.xml"
-image_path             = None
-video_device           = -1 # 0 / -1 for first device/ first device found
-                            # A file path string for a device (ex. "/dev/video0")
+c_squared_reference = 51000 #58565 #59085 #70625 #52234 #55162
+allowed_variance    = 1.1 # Use to adjust sensitivity of slouch detection
+                          # 1 to 1.3 should be sane values.
+cascade_path        = "/home/me/PROJECTS/slouchy/haarcascade_frontalface_default.xml"
+image_path          = None
+video_device        = -1 # 0 / -1 for first device/ first device found
+                         # Or a file path string for a device (ex. "/dev/video0")
+                         # -1 should work for most people
 
 # Create the haar cascade
 faceCascade = cv2.CascadeClassifier(cascade_path)
 
-# Take a picture with the camera. video_device -> Maybe image
+# Calculate c_squared MaybeFace -> MaybeCSquared
+def calculate_c_squared(MaybeFace):
+  if MaybeFace.success:
+    (x, y, w, h) = MaybeFace.result
+  else:
+    return Maybe(False, "Error calculating c_squared. No face supplied.")
+
+  print("x =", '{:d}'.format(x))
+  print("y =", '{:d}'.format(y))
+  print("w =", '{:d}'.format(w))
+  print("h =", '{:d}'.format(h))
+
+  c_squared = y**2 + w**2
+
+  return Maybe(True, c_squared)
+
+# Take a picture with the camera. video_device -> MaybeImage
 def take_picture(video_device):
 
   cap = cv2.VideoCapture(video_device)
@@ -62,24 +74,30 @@ def detect_slouching(MaybeImage):
 
   print("Found {0} faces!".format(len(faces)))
 
+  # Draw a box around the faces, and test the posture of each
+  for face in faces:
+    try:
+      (x, y, w, h) = face
+      MaybeFace = Maybe(True, face)
+    except:
+      MaybeFace = Maybe(False, "Error getting face positional data")
 
-    # Draw a line at the top of the face
-  for (x, y, w, h) in faces:
-      cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
+    MaybeCSquared = calculate_c_squared(MaybeFace)
 
-      print("x =", '{:d}'.format(x))
-      print("y =", '{:d}'.format(y))
-      print("w =", '{:d}'.format(w))
-      print("h =", '{:d}'.format(h))
+    if MaybeCSquared.success:
+      current_posture = MaybeCSquared.result
+    else:
+      return MaybeCSquared
 
-      current_posture = y**2 + w**2
-      print("y^2 + w^2 =", '{:d}'.format(current_posture))
-      print("Current posture / c_squared", '{:f}'.format(float(current_posture) / c_squared))
+    cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
+    print("y^2 + w^2 =", '{:d}'.format(current_posture))
+    print("Current posture / c_squared", '{:f}'
+          .format(float(current_posture) / c_squared_reference))
 
-      if current_posture >= (c_squared * allowed_variance):
-        slouching = True
-      else:
-        slouching = False
+    if current_posture >= (c_squared_reference * allowed_variance):
+      slouching = True
+    else:
+      slouching = False
 
   if len(faces) == 1:
     return Maybe(True, slouching)
