@@ -4,7 +4,7 @@ from collections import namedtuple
 from configobj import ConfigObj
 
 # Trying some pseudo-functional programming here.
-# Making use of namedtuples throughout this program to simulate a Maybe.
+# Making use of namedtuples throughout this program to simulate a Maybe/Either.
 # success is always True or False, and indicates if the requested operation succeeded.
 # if success result is the calculation results
 # otherwise result is an error message
@@ -36,9 +36,20 @@ def calculate_c_squared(MaybeFace):
   print("w =", '{:d}'.format(w))
   print("h =", '{:d}'.format(h))
 
+  # TODO: The odd thing about this calculation is that width of your face 
+  # actually increases as you get closer to the camera, when it should decrease. 
+  # Naively attempting to subtract camera width/height from face width did not work.
   c_squared = y**2 + w**2
 
   return Maybe(True, c_squared)
+
+def get_face_width(MaybeFace):
+  if MaybeFace.success:
+    (x, y, w, h) = MaybeFace.result
+  else:
+    return MaybeFace
+
+  return Maybe(True, w)  
 
 # Take a picture with the camera. video_device -> MaybeImage
 def take_picture(video_device):
