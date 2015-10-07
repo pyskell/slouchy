@@ -1,2 +1,4 @@
 *.pyc
 __pycache__
+PyQt-gpl-5.5
+sip-4.16.9

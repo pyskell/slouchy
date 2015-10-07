@@ -40,6 +40,7 @@ icon = wx.TaskBarIcon()
 icon.SetIcon(wx.Icon('favicon_32.bmp', type=wx.BITMAP_TYPE_ANY))
 
 alert = ToasterFrame(None)
+alert.Show(False)
 app.SetTopWindow(alert)
 
 wx.CallAfter(check_slouching, alert)
