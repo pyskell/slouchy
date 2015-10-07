@@ -1,7 +1,13 @@
 import cv2
+# import daemon
 
 from collections import namedtuple
 from configobj import ConfigObj
+
+# from taskbar_icon import alert, app
+
+# with daemon.DaemonContext():
+#   app.MainLoop()  
 
 # Trying some pseudo-functional programming here.
 # Making use of namedtuples throughout this program to simulate a Maybe/Either.
@@ -91,12 +97,14 @@ def detect_face(MaybeImage):
     return Maybe(True, face)
 
   else:
-    # Draw a box around the faces
-    for (x, y, w, h) in faces:
-      cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
+    # Assume we're being used as a library for configuration.
+    if __name__ != '__main__':
+      # Draw a box around the faces
+      for (x, y, w, h) in faces:
+        cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
 
-    cv2.imshow("{:d} Faces found. Remove other faces. Press any key to quit.".format(len(faces)) ,image)
-    cv2.waitKey(0)
+      cv2.imshow("{:d} Faces found. Remove other faces. Press any key to quit.".format(len(faces)) ,image)
+      cv2.waitKey(0)
     return Maybe(False, "Expected 1 face, found {:d} faces. Please make sure your face is in frame, and remove any other things detected as a face from the frame.".format(len(faces)))
 
 # Detect if person is slouching 
@@ -119,6 +127,7 @@ def detect_slouching(MaybeFace):
 
   if current_posture >= (c_squared_reference * allowed_variance):
     slouching = True
+    # alert.szhow_popup()
   else:
     slouching = False
 
@@ -134,4 +143,7 @@ def main():
   else:
     print(maybe_slouching.result)
 
-main()
+  return maybe_slouching.result
+
+if __name__ == '__main__':
+  main()  
