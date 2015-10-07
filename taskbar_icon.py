@@ -35,11 +35,11 @@ def check_slouching():
     if slouching:
       alert = ToasterFrame(None)
       app.SetTopWindow(alert)
-      wx.CallLater(100, alert.Show(False)) # Hides the main app window?
+      wx.CallLater(2000, alert.Show(False)) # Hides the main app window?
       # wx.CallLater(1000, alert.Destroy)
       # wx.CallLater(2000, alert.Destroy)
     
-    time.sleep(10)
+    time.sleep(20)
 
 app = wx.App(0)
 icon = wx.TaskBarIcon()
