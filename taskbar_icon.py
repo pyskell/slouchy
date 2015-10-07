@@ -27,7 +27,7 @@ def start_thread(func, *args):
     thread.setDaemon(True)
     thread.start()
 
-def check_slouching(app):
+def check_slouching():
 
   while True:
     slouching = main()
@@ -39,13 +39,13 @@ def check_slouching(app):
       # wx.CallLater(1000, alert.Destroy)
       # wx.CallLater(2000, alert.Destroy)
     
-    time.sleep(10)
+    time.sleep(20)
 
 app = wx.App(0)
 icon = wx.TaskBarIcon()
 icon.SetIcon(wx.Icon('favicon_32.bmp', type=wx.BITMAP_TYPE_ANY))
 
-start_thread(check_slouching, app)
+start_thread(check_slouching)
 
 app.MainLoop()
 
