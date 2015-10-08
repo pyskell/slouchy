@@ -52,9 +52,7 @@ def calculate_c_squared(MaybeFace):
   print("w =", '{:d}'.format(w))
   print("h =", '{:d}'.format(h))
 
-  # TODO: The odd thing about this calculation is that width of your face 
-  # actually increases as you get closer to the camera, when it should decrease. 
-  # Naively attempting to subtract camera width/height from face width did not work.
+  # TODO: See if this calculation can be improved
   c_squared = y**2 + (camera_width - w)**2
 
   return Maybe(True, c_squared)
