@@ -1,13 +1,19 @@
 import cv2
-# import daemon
 
 from collections import namedtuple
 from configobj import ConfigObj
 
-# from taskbar_icon import alert, app
+"""
+The main module will return a namedtuple called Maybe.
+This is designed to emulate the behavior you see with Maybe/Either in functional languages.
 
-# with daemon.DaemonContext():
-#   app.MainLoop()  
+success (Bool)  Indicates whether or not main was able to detect a single face 
+                and perform the necessary calculations.
+
+result (Bool/Str) If success is true then result will 
+                  indicate slouching (True = Yes, False = No)
+                  If success is false it will be a string indicating what went wrong.
+"""
 
 # Trying some pseudo-functional programming here.
 # Making use of namedtuples throughout this program to simulate a Maybe/Either.
@@ -57,7 +63,9 @@ def get_face_width(MaybeFace):
 
   return Maybe(True, w)  
 
-# Take a picture with the camera. video_device -> MaybeImage
+# Take a picture with the camera. 
+# Ideally this is where we always transition from the impure to "pure" calculations.
+# video_device -> MaybeImage
 def take_picture(video_device):
 
   cap = cv2.VideoCapture(video_device)
@@ -97,8 +105,9 @@ def detect_face(MaybeImage):
     return Maybe(True, face)
 
   else:
-    # Assume we're being used as a library for configuration.
-    if __name__ != '__main__':
+    # If we're run as main we can show a box around the faces.
+    # Otherwise it's nicer if we just spit out an error message.
+    if __name__ == '__main__':
       # Draw a box around the faces
       for (x, y, w, h) in faces:
         cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
@@ -138,12 +147,7 @@ def main():
   maybe_face = detect_face(maybe_image)
   maybe_slouching = detect_slouching(maybe_face)
 
-  if maybe_slouching.success:
-    print("Slouching:", maybe_slouching.result)
-  else:
-    print(maybe_slouching.result)
-
-  return maybe_slouching.result
+  return maybe_slouching
 
 if __name__ == '__main__':
   main()  
