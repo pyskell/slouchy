@@ -4,7 +4,8 @@ from collections import namedtuple
 from configobj import ConfigObj
 
 """
-Slouchy uses your webcam to check if you're slouching and alert you if you are. This project is still in active development and not feature complete.
+Slouchy uses your webcam to check if you're slouching and alert you if you are. 
+This project is still in active development and not feature complete.
 
 The main module will return a namedtuple called Maybe.
 This is designed to emulate the behavior you see with Maybe/Either in functional languages.
