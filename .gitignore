@@ -1,6 +1,3 @@
-PyQt-gpl-5.5
-sip-4.16.9
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

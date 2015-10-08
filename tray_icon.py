@@ -13,6 +13,7 @@ class TrayIcon(QtGui.QSystemTrayIcon):
   def __init__(self, icon, parent=None):
     QtGui.QSystemTrayIcon.__init__(self, icon, parent)
     self.workThread = SlouchingThread()
+
     menu = QtGui.QMenu(parent)
     exitAction = menu.addAction("Quit")
     self.setContextMenu(menu)
@@ -73,7 +74,7 @@ class SlouchingThread(QtCore.QThread):
 app = QtGui.QApplication(sys.argv)
 
 w = WrapperWidget()
-tray = TrayIcon(QtGui.QIcon('favicon_32.bmp'), w)
+tray = TrayIcon(QtGui.QIcon('slouchy_icon.png'), w)
 
 tray.show()
 tray.alert()
