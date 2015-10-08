@@ -69,7 +69,7 @@ class SlouchingThread(QtCore.QThread):
   def run(self):
     while self.run_loop:
 
-      # print("In the slouching loop")
+      # TODO: Possibly collect a certain number of readings and then only bother people if all or most of the readings indicate slouching. Best 2 out of 3?
       slouching = maybe_slouching()
 
       if slouching.success:
