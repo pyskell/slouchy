@@ -73,8 +73,9 @@ class SlouchingThread(QtCore.QThread):
       slouching = maybe_slouching()
 
       if slouching.success:
-        self.emit(QtCore.SIGNAL('slouching_alert(QString, QString)'), 
-                  "You're slouching", "Stop slouching!")
+        if slouching.result == True:
+          self.emit(QtCore.SIGNAL('slouching_alert(QString, QString)'), 
+                    "You're slouching", "Stop slouching!")
       else:
         self.emit(QtCore.SIGNAL('slouching_alert(QString, QString)'), 
                   "Error encountered", str(slouching.result))

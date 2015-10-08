@@ -33,6 +33,10 @@ try:
 except ValueError:
   video_device = str(config['MAIN']['video_device'])
 
+cap = cv2.VideoCapture(video_device)
+camera_width = int(cap.get(3))
+cap.release()
+
 # Create the haar cascade
 faceCascade = cv2.CascadeClassifier(cascade_path)
 
@@ -51,7 +55,7 @@ def calculate_c_squared(MaybeFace):
   # TODO: The odd thing about this calculation is that width of your face 
   # actually increases as you get closer to the camera, when it should decrease. 
   # Naively attempting to subtract camera width/height from face width did not work.
-  c_squared = y**2 + w**2
+  c_squared = y**2 + (camera_width - w)**2
 
   return Maybe(True, c_squared)
 
@@ -131,15 +135,20 @@ def detect_slouching(MaybeFace):
     return MaybeCSquared
 
   print("y^2 + w^2 =", '{:d}'.format(current_posture))
-  print("Current posture / c_squared", '{:f}'
+  print("Current posture / c_squared_reference:", '{:f}'
         .format(float(current_posture) / c_squared_reference))
+  print("Current posture * allowed_variance:", '{:f}'
+    .format(float(current_posture * allowed_variance)))
 
-  if current_posture >= (c_squared_reference * allowed_variance):
-    slouching = True
-    # alert.szhow_popup()
-  else:
+  c_min = c_squared_reference * (1.0 - allowed_variance)
+  c_max = c_squared_reference * (1.0 + allowed_variance)
+
+  if c_min <= current_posture <= c_max:
     slouching = False
+  else:
+    slouching = True
 
+  print("Slouching:", slouching)
   return Maybe(True, slouching)
 
 def main():
