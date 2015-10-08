@@ -6,8 +6,12 @@ from PyQt4 import QtGui, QtCore
 # from PyQt4.QtCore import QString
 
 from main import main as maybe_slouching
+from main import config
 
 # Qt4 threading advice from here: https://joplaete.wordpress.com/2010/07/21/threading-with-pyqt4/
+
+check_frequency = int(config['MAIN']['check_frequency'])
+# alert_duration  = int(config['MAIN']['alert_duration'])
 
 class TrayIcon(QtGui.QSystemTrayIcon):
   def __init__(self, icon, parent=None):
@@ -30,11 +34,17 @@ class TrayIcon(QtGui.QSystemTrayIcon):
                  self.showMessage)
     self.workThread.start()
 
+  # def showMessage(*args, **kwargs):
+  #   if 'msecs' not in kwargs:
+  #     kwargs['msecs'] = alert_duration
+
+  #   QtGui.QSystemTrayIcon.showMessage(*args, **kwargs)
+
 class WrapperWidget(QtGui.QWidget):
   def __init__(self, parent=None):
     QtGui.QWidget.__init__(self, parent)
    
-    self.setGeometry(300, 300, 280, 600)
+    self.setGeometry(100, 100, 100, 100)
     self.setWindowTitle('threads')
     # self.show()
 
@@ -69,7 +79,7 @@ class SlouchingThread(QtCore.QThread):
         self.emit(QtCore.SIGNAL('slouching_alert(QString, QString)'), 
                   "Error encountered", str(slouching.result))
       
-      time.sleep(10)
+      time.sleep(check_frequency)
 
 app = QtGui.QApplication(sys.argv)
 
