@@ -6,9 +6,9 @@ Slouchy uses your webcam to check if you're slouching and alert you if you are. 
 
 `pip install --upgrade --trusted-host wxpython.org --pre -f http://wxpython.org/Phoenix/snapshot-builds/ wxPython_Phoenix`
 
-Sit upright in front of your webcam and run `setup.py` to get the baseline "upright" position for you.
-
 Tweak `slouchy.ini` to your liking
+
+Sit upright in front of your webcam and run `setup.py` to get the baseline "upright" position for you.
 
 Run `slouchy.py` to have a system tray icon that alerts you when you're slouching.
 
