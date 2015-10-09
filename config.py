@@ -1,5 +1,6 @@
 from configobj import ConfigObj
 
+# Local imports
 from main import video_device, calculate_c_squared, take_picture, detect_face
 
 # Set initial values

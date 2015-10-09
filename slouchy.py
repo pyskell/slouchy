@@ -3,8 +3,9 @@ import sys
 import time
 
 from PyQt4 import QtGui, QtCore
-# from PyQt4.QtCore import QString
 
+# Local imports
+from config import setup
 from main import main as maybe_slouching
 from main import config
 
@@ -18,11 +19,13 @@ class TrayIcon(QtGui.QSystemTrayIcon):
     QtGui.QSystemTrayIcon.__init__(self, icon, parent)
     self.workThread = SlouchingThread()
 
-    menu = QtGui.QMenu(parent)
-    exitAction = menu.addAction("Quit")
+    menu        = QtGui.QMenu(parent)
+    setupAction = menu.addAction("Setup")
+    exitAction  = menu.addAction("Quit")
     self.setContextMenu(menu)
 
     self.connect(exitAction, QtCore.SIGNAL('triggered()'), sys.exit)
+    self.connect(setupAction, QtCore.SIGNAL('triggered()'), setup)
 
   def __del__(self):
     QtGui.QSystemTrayIcon.__del__(self)
