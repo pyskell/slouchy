@@ -1,0 +1,1 @@
+pyinstaller --distpath="win32-bin" --workpath="win32-build" -i slouchy_icon.png -w slouchy.spec
