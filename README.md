@@ -4,6 +4,8 @@ Slouchy uses your webcam to check if you're slouching and alert you if you are. 
 # Using - Linux
 `pip install -r requirements.txt`
 
+Install PyQT4 and QT4 are installed: http://pyqt.sourceforge.net/Docs/PyQt4/installation.html
+
 Tweak `slouchy.ini` to your liking.
 
 Run `slouchy.py`
