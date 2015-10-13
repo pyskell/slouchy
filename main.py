@@ -1,4 +1,5 @@
 import cv2
+import time
 
 from collections import namedtuple
 from configobj import ConfigObj
@@ -29,6 +30,7 @@ config              = ConfigObj('slouchy.ini')
 c_squared_reference = int(config['MAIN']['c_squared_reference'])
 allowed_variance    = float(config['MAIN']['allowed_variance'])
 cascade_path        = str(config['MAIN']['cascade_path'])
+camera_delay        = int(config['MAIN']['camera_delay'])
 
 #video_device can be an int or a string, so try int, and if not assume string
 try:
@@ -75,6 +77,11 @@ def take_picture(video_device):
 
   cap = cv2.VideoCapture(video_device)
   cap.open(video_device)
+
+  # Added since some cameras need time to warm up before they can take pictures.
+  if camera_delay > 0:
+    time.sleep(camera_delay)
+
   ret, image = cap.read()
 
   if not ret:
