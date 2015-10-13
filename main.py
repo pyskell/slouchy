@@ -27,7 +27,7 @@ result (Bool/Str) If success is true then result will
 Maybe = namedtuple('Maybe', ['success','result'])
 
 config              = ConfigObj('slouchy.ini')
-c_squared_reference = int(config['MAIN']['c_squared_reference'])
+y_ratio_reference = float(config['MAIN']['y_ratio_reference'])
 allowed_variance    = float(config['MAIN']['allowed_variance'])
 cascade_path        = str(config['MAIN']['cascade_path'])
 camera_delay        = int(config['MAIN']['camera_delay'])
@@ -38,29 +38,40 @@ try:
 except ValueError:
   video_device = str(config['MAIN']['video_device'])
 
-cap = cv2.VideoCapture(video_device)
-camera_width = int(cap.get(3))
+cap      = cv2.VideoCapture(video_device)
+camera_x = int(cap.get(3))
+camera_y = int(cap.get(4))
 cap.release()
 
 # Create the haar cascade
 faceCascade = cv2.CascadeClassifier(cascade_path)
 
-# Calculate c_squared MaybeFace -> MaybeCSquared
-def calculate_c_squared(MaybeFace):
+# Calculate y_ratio MaybeFace -> MaybeYRatioSquared
+def calculate_y_ratio(MaybeFace):
   if MaybeFace.success:
     (x, y, w, h) = MaybeFace.result
   else:
     return MaybeFace
 
-  print("x =", '{:d}'.format(x))
+  # print("x =", '{:d}'.format(x))
+  # print("h =", '{:d}'.format(h))
   print("y =", '{:d}'.format(y))
   print("w =", '{:d}'.format(w))
-  print("h =", '{:d}'.format(h))
+  print("camera_x =", '{:d}'.format(camera_x))
+  print("camera_y =", '{:d}'.format(camera_y))
+
+  # w_ratio = (camera_x - w) / float(camera_x)
+  y_ratio = y / float(camera_y)
+
+  print("y_ratio", '{:f}'.format(y_ratio))
 
   # TODO: See if this calculation can be improved
-  c_squared = y**2 + (camera_width - w)**2
+  # c_squared = y**2 + (camera_w - w)**2
+  # w_y_ratio = w_ratio / y_ratio
+  # print("w/y =", '{:.4f}'.format(w_y_ratio))
 
-  return Maybe(True, c_squared)
+  # return Maybe(True, w_y_ratio)
+  return Maybe(True, y_ratio)
 
 def get_face_width(MaybeFace):
   if MaybeFace.success:
@@ -117,32 +128,37 @@ def detect_face(MaybeImage):
     face = faces[0]
     return Maybe(True, face)
   except IndexError:
-    return Maybe(False, "No faces detected. This may be due to low or uneven lighting.")
+    return Maybe(False, "No faces detected. This may be due to low / uneven lighting, or your particular model of camera. Check slouchy.ini for possible fixes.")
 
 # Detect if person is slouching 
 # MaybeFace -> MaybeSlouching
 def detect_slouching(MaybeFace):
 
   if MaybeFace.success:
-    MaybeCSquared = calculate_c_squared(MaybeFace)
+    MaybeYRatioSquared = calculate_y_ratio(MaybeFace)
   else:
     return MaybeFace
 
-  if MaybeCSquared.success:
-    current_posture = MaybeCSquared.result
+  if MaybeYRatioSquared.success:
+    y_current = MaybeYRatioSquared.result
   else:
-    return MaybeCSquared
+    return MaybeYRatioSquared
 
-  print("y^2 + w^2 =", '{:d}'.format(current_posture))
-  print("Current posture / c_squared_reference:", '{:f}'
-        .format(float(current_posture) / c_squared_reference))
-  print("Current posture * allowed_variance:", '{:f}'
-    .format(float(current_posture * allowed_variance)))
+  # print("y^2 + w^2 =", '{:f}'.format(c_current))
+  # print("Current posture / w_y_ratio_reference:", '{:f}'
+  #       .format(float(c_current) / w_y_ratio_reference))
+  # print("Current posture * allowed_variance:", '{:f}'
+  #   .format(float(c_current * allowed_variance)))
 
-  c_min = c_squared_reference * (1.0 - allowed_variance)
-  c_max = c_squared_reference * (1.0 + allowed_variance)
+  y_min = y_ratio_reference * (1.0 - allowed_variance)
+  y_max = y_ratio_reference * (1.0 + allowed_variance)
 
-  if c_min <= current_posture <= c_max:
+  print("y_min", '{:.4f}'.format(y_min))
+  print("y_current", '{:.4f}'.format(y_current))
+  print("y_max", '{:.4f}'.format(y_max))
+
+  # if w_y_min <= w_y_current <= w_y_max:
+  if y_current <= y_max:
     slouching = False
   else:
     slouching = True

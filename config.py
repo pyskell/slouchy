@@ -1,7 +1,7 @@
 from configobj import ConfigObj
 
 # Local imports
-from main import video_device, calculate_c_squared, take_picture, detect_face
+from main import video_device, calculate_y_ratio, take_picture, detect_face
 
 # Set initial values
 def setup():
@@ -15,14 +15,14 @@ def setup():
 
   maybe_image     = take_picture(video_device)
   maybe_face      = detect_face(maybe_image)
-  maybe_c_squared = calculate_c_squared(maybe_face)
+  maybe_y_ratio = calculate_y_ratio(maybe_face)
 
-  if maybe_c_squared.success:
-    config['MAIN']['c_squared_reference'] = str(maybe_c_squared.result)
-    print("Reference value detected as:", maybe_c_squared.result)
+  if maybe_y_ratio.success:
+    config['MAIN']['y_ratio_reference'] = str(maybe_y_ratio.result)
+    print("Reference value detected as:", maybe_y_ratio.result)
   else:
-    print("Error:", maybe_c_squared.result)
-    return maybe_c_squared
+    print("Error:", maybe_y_ratio.result)
+    return maybe_y_ratio
 
   config.write()
 
