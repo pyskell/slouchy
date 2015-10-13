@@ -12,7 +12,7 @@ Run `slouchy.py`
 
 Sit upright in front of your webcam.
 
-While sitting upright, right click on the Slouchy icon in your system try and choose setup.
+While sitting upright, right click on the Slouchy icon in your system tray and choose setup.
 
 Slouchy will now alert you if you're slouching
 
