@@ -29,8 +29,6 @@ While sitting upright, right click on the Slouchy icon in your system tray and c
 
 Slouchy will now alert you if you're slouching
 
-If it complains about multiple faces run `main.py` and you should get an output image showing everything that looks like a face to the program. Remove anything from the background that looks like a face.
-
 # License
 This software is released under the GNU GPL version 3 except for the `haarscascade_frontalface_default.xml` file which is released under the Intel License Agreement For Open Source Computer Vision Library
 
