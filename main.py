@@ -105,21 +105,12 @@ def detect_face(MaybeImage):
       flags = cv2.cv.CV_HAAR_SCALE_IMAGE
   )
 
-  if len(faces) == 1:
+  # We assume the largest face (at index zero) is the face we're interested in
+  try:
     face = faces[0]
     return Maybe(True, face)
-
-  else:
-    # If we're run as main we can show a box around the faces.
-    # Otherwise it's nicer if we just spit out an error message.
-    if __name__ == '__main__':
-      # Draw a box around the faces
-      for (x, y, w, h) in faces:
-        cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
-
-      cv2.imshow("{:d} Faces found. Remove other faces. Press any key to quit.".format(len(faces)) ,image)
-      cv2.waitKey(0)
-    return Maybe(False, "Expected 1 face, found {:d} faces. Please make sure your face is in frame, and remove any other things detected as a face from the frame.".format(len(faces)))
+  except IndexError:
+    return Maybe(False, "No faces detected. This may be due to low or uneven lighting.")
 
 # Detect if person is slouching 
 # MaybeFace -> MaybeSlouching

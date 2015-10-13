@@ -1,5 +1,5 @@
 configobj==5.0.6
-configparser==3.3.0.post2
+configparser==3.5.0b2
 cv2==1.0
 docutils==0.12
 lockfile==0.10.2
