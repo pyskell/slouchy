@@ -16,6 +16,7 @@ On Debian-based distros the below apt-get should work:
 On Mac:
 
 `brew tap homebrew/science`
+
 `brew install python qt pyqt opencv`
 
 For all syatems additional dependencies need to be installed via:
