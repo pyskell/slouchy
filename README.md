@@ -13,7 +13,12 @@ On Debian-based distros the below apt-get should work:
 
 `apt-get install python2.7 python2.7-dev libqt4-core libqt4-dev opencv-data libopencv-core2.4 libopencv-dev python-opencv`
 
-Other dependencies installed via:
+On Mac:
+
+`brew tap homebrew/science`
+brew install python qt pyqt opencv`
+
+For all syatems additional dependencies need to be installed via:
 
 `pip install -r requirements.txt`
 
