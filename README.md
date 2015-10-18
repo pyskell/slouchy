@@ -19,7 +19,7 @@ On Mac:
 
 `brew install python qt pyqt opencv`
 
-For all syatems additional dependencies need to be installed via:
+For all systems additional dependencies need to be installed via:
 
 `pip install -r requirements.txt`
 
