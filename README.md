@@ -27,7 +27,7 @@ For all systems additional dependencies need to be installed via:
 
 Tweak `slouchy.ini` to your liking.
 
-Run `python slouchy.py`
+Run `python2 slouchy.py`
 
 Sit upright in front of your webcam.
 
