@@ -27,7 +27,7 @@ result (Bool/Str) If success is true then result will
 Maybe = namedtuple('Maybe', ['success','result'])
 
 config              = ConfigObj('slouchy.ini')
-c_squared_reference = int(config['MAIN']['c_squared_reference'])
+posture_reference = float(config['MAIN']['posture_reference'])
 allowed_variance    = float(config['MAIN']['allowed_variance'])
 cascade_path        = str(config['MAIN']['cascade_path'])
 camera_delay        = int(config['MAIN']['camera_delay'])
@@ -38,15 +38,18 @@ try:
 except ValueError:
   video_device = str(config['MAIN']['video_device'])
 
-cap = cv2.VideoCapture(video_device)
-camera_width = int(cap.get(3))
+cap           = cv2.VideoCapture(video_device)
+camera_width  = float(cap.get(3))
+camera_height = float(cap.get(4))
+print("camera_width:", camera_width)
+print("camera_height:", camera_height)
 cap.release()
 
 # Create the haar cascade
 faceCascade = cv2.CascadeClassifier(cascade_path)
 
-# Calculate c_squared MaybeFace -> MaybeCSquared
-def calculate_c_squared(MaybeFace):
+# Calculate current_posture MaybeFace -> MaybeCSquared
+def calculate_current_posture(MaybeFace):
   if MaybeFace.success:
     (x, y, w, h) = MaybeFace.result
   else:
@@ -58,9 +61,9 @@ def calculate_c_squared(MaybeFace):
   print("h =", '{:d}'.format(h))
 
   # TODO: See if this calculation can be improved
-  c_squared = y**2 + (camera_width - w)**2
+  current_posture = y + w
 
-  return Maybe(True, c_squared)
+  return Maybe(True, current_posture)
 
 def get_face_width(MaybeFace):
   if MaybeFace.success:
@@ -124,7 +127,7 @@ def detect_face(MaybeImage):
 def detect_slouching(MaybeFace):
 
   if MaybeFace.success:
-    MaybeCSquared = calculate_c_squared(MaybeFace)
+    MaybeCSquared = calculate_current_posture(MaybeFace)
   else:
     return MaybeFace
 
@@ -133,14 +136,18 @@ def detect_slouching(MaybeFace):
   else:
     return MaybeCSquared
 
-  print("y^2 + w^2 =", '{:d}'.format(current_posture))
-  print("Current posture / c_squared_reference:", '{:f}'
-        .format(float(current_posture) / c_squared_reference))
-  print("Current posture * allowed_variance:", '{:f}'
-    .format(float(current_posture * allowed_variance)))
+  # print("y^2 + w^2 =", '{:d}'.format(current_posture))
+  # print("Current posture / c_squared_reference:", '{:f}'
+  #       .format(float(current_posture) / c_squared_reference))
+  # print("Current posture * allowed_variance:", '{:f}'
+  #   .format(float(current_posture * allowed_variance)))
 
-  c_min = c_squared_reference * (1.0 - allowed_variance)
-  c_max = c_squared_reference * (1.0 + allowed_variance)
+  c_min = posture_reference * (1.0 - allowed_variance)
+  c_max = posture_reference * (1.0 + allowed_variance)
+
+  print("c_min:", c_min)
+  print("current_posture:", current_posture)
+  print("c_max:", c_max)
 
   if c_min <= current_posture <= c_max:
     slouching = False

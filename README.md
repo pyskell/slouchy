@@ -9,17 +9,18 @@ You need to install the following system-wide:
 * [OpenCV](http://docs.opencv.org/doc/tutorials/introduction/table_of_content_introduction/table_of_content_introduction.html)
 * [OpenCV-Python](https://opencv-python-tutroals.readthedocs.org/en/latest/py_tutorials/py_setup/py_table_of_contents_setup/py_table_of_contents_setup.html#py-table-of-content-setup)
 
+## Debian Dependencies
 On Debian-based distros the below apt-get should work:
 
 `apt-get install python2.7 python2.7-dev libqt4-core libqt4-dev opencv-data libopencv-core2.4 libopencv-dev python-opencv`
 
-On Mac:
+`pip install -r requirements.txt`
+
+## Mac Dependencies
 
 `brew tap homebrew/science`
 
 `brew install python qt pyqt opencv`
-
-For all systems additional dependencies need to be installed via:
 
 `pip install -r requirements.txt`
 
