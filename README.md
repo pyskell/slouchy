@@ -28,7 +28,7 @@ On Debian-based distros the below apt-get should work:
 
 Tweak `slouchy.ini` to your liking.
 
-Run `python slouchy.py`
+Run `python2 slouchy.py`
 
 Sit upright in front of your webcam.
 
