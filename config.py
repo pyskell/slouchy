@@ -1,7 +1,7 @@
 from configobj import ConfigObj
 
 # Local imports
-from main import video_device, calculate_current_posture, take_picture, detect_face
+from main import video_device, determine_posture, take_picture, detect_face
 
 # Set initial values
 def setup():
@@ -9,7 +9,7 @@ def setup():
 
   maybe_image     = take_picture(video_device)
   maybe_face      = detect_face(maybe_image)
-  maybe_current_posture = calculate_current_posture(maybe_face)
+  maybe_current_posture = determine_posture(maybe_face)
 
   if maybe_current_posture.success:
     config['MAIN']['posture_reference'] = str(maybe_current_posture.result)
