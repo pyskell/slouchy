@@ -44,8 +44,8 @@ result (Bool/Str): If success is true, result provides accompanying information
 #     lat_cerv_tol (float): The amount lateral flexion of the cervical before
 #         assuming slouching. Note: this and a few other values will be
 #         integrated into a single model to better discern slouching.
-#     face_cc_path (str): The path for the face cascade classifier.
-#     eye_cc_path (str): The path for the eye cascade classifier.
+#     face_cascade_path (str): The path for the face cascade classifier.
+#     eye_cascade_path(str): The path for the eye cascade classifier.
 #     camera_delay (int): The Δtime needed for the user camera to initialize.
 
 # Some pseudo-functional programming here: use of namedtuples to simulate the
@@ -60,8 +60,8 @@ config              = ConfigObj('slouchy.ini')
 posture_reference   = float(config['MAIN']['posture_reference'])
 allowed_variance    = float(config['MAIN']['allowed_variance'])
 lat_cerv_tol        = float(config['MAIN']['lat_cerv_tol'])
-face_cc_path        = str(config['MAIN']['cascade_path'])
-eye_cc_path         = str(config['MAIN']['eye_cascade_path'])
+face_cascade_path   = str(config['MAIN']['face_cascade_path'])
+eye_cascade_path    = str(config['MAIN']['eye_cascade_path'])
 camera_delay        = int(config['MAIN']['camera_delay'])
 
 #video_device can be an int or a string, so try int, and if not assume string
@@ -163,7 +163,7 @@ def determine_posture(MaybeImage):
   maybe_face     = detect_face(MaybeImage)
   maybe_distance = determine_distance(maybe_face) #Record face-camera distance
 
-  # TODO: Factor this out somehow? I don't like this...
+  # TODO: Factor this out or something? I don't like this...
   if maybe_distance.success:
     distance = maybe_distance.result
   else:
@@ -197,7 +197,7 @@ def detect_face(MaybeImage):
   else:
     return MaybeImage
 
-  faceCascade = cv2.CascadeClassifier(face_cc_path) # Load face classifier
+  faceCascade = cv2.CascadeClassifier(face_cascade_path) # Load face classifier
 
   faces = faceCascade.detectMultiScale(             # Detect faces in image
       image=image,                                  # and store info in a list
@@ -214,9 +214,10 @@ def detect_face(MaybeImage):
     return Maybe(False, "No faces detected. This may be due to low or uneven \
 lighting.")
 
+# FIX: Seems to only detect head tilting to the right?
 def find_head_tilt(face):
   """Take one facial image and return the angle (only magnitude) of its tilt"""
-  classifier = cv2.CascadeClassifier(eye_cc_path)
+  classifier = cv2.CascadeClassifier(eye_cascade_path)
 
   if classifier.empty():
     return 0 # Don't complain, gracefully continue without this function
@@ -247,8 +248,9 @@ def detect_slouching(MaybePos):
       MaybePos Maybe(bool, [float, float]: Head distance and lateral tilt.
 
   Returns:
-      Maybe(bool, bool) or Maybe(bool, str): The dertermination of slouching
+      Maybe(bool, dict) or Maybe(bool, str): The determination of slouching
       or an error message from somewhere upstream.
+      dict will contain booleans for 'body_slouching', and 'head_tilting'
   """
   if MaybePos.success:
     posture = MaybePos.result
@@ -266,18 +268,22 @@ def detect_slouching(MaybePos):
   print("c_max:", c_max)
 
   if c_min <= current_posture <= c_max:
-    slouching = False
+    body_slouching = False
   else:
-    slouching = True
+    body_slouching = True
 
   # TODO: Adjust so these two types of slouching alert users with different messages.
   if tilt > lat_cerv_tol:
-    slouching = True
+    head_tilting = True
+  else:
+    head_tilting = False
 
-  print("Slouching:", slouching)
-  return Maybe(True, slouching)
+  print("body_slouching:", body_slouching)
+  print("head_tilting:", head_tilting)
+  return Maybe(True, {'body_slouching' : body_slouching, 'head_tilting' : head_tilting})
 
-def main():
+# MaybeSlouching
+def slouching_results():
   maybe_image = take_picture(video_device)
   maybe_posture = determine_posture(maybe_image)
   maybe_slouching = detect_slouching(maybe_posture)
@@ -285,4 +291,4 @@ def main():
   return maybe_slouching
 
 if __name__ == '__main__':
-  main()  
+  slouching_results() 
