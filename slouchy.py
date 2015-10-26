@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 import sys
+import signal
 import time
 
 from PyQt4 import QtGui, QtCore
@@ -87,6 +88,7 @@ class SlouchingThread(QtCore.QThread):
       time.sleep(check_frequency)
 
 app = QtGui.QApplication(sys.argv)
+signal.signal(signal.SIGINT, signal.SIG_DFL) #Force PYQT to handle SIGINT (CTRL+C)
 
 w = WrapperWidget()
 tray = TrayIcon(QtGui.QIcon('slouchy_icon.png'), w)
