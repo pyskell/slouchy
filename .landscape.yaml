@@ -1,0 +1,12 @@
+strictness: medium
+
+pylint:
+  disable:
+    - bad-indentation
+    - line-too-long
+
+pep8:
+  disable:
+    - E501
+    - E114
+    - E131
