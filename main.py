@@ -6,6 +6,8 @@ from collections import namedtuple
 from configobj   import ConfigObj
 from math        import atan
 
+from arg import get_arguments
+
 """
 Slouchy uses your webcam to determin if you are slouching and alerts you when
 you are. This project is still in active development and not feature complete.
@@ -14,15 +16,10 @@ Example:
     $ ./slouchy.py [arguments]
 
 Arguments (unimplemented):
-    -t    Put slouchy in text-only mode. All GUI features are disabled. This
-          mode also implicitly activates -v (verbose mode).
-    -g    Put slouchy in GUI mode (the default). GUI mode normally detaches
-          slouchy from the terminal.
-    -v    Put slouchy in verbose mode. It will output all important information
-          on the command-line. If in GUI mode, slouchy will remain connected to
-          the terminal (providing additional addional information to the GUI).
-          If in text-only mode, this option is redundant.
-    -h    Print a help message, then terminate.
+    -t, --text-mode    Put slouchy in text mode, disabling all GUI features.
+    -g, --gui          Put slouchy in GUI mode (the default). GUI mode normally
+                       detaches slouchy from the terminal.
+    -h, --help         Print a help message, then terminate.
 
 Attributes:
     config (configobj.ConfigObj): Used to access slouchy's config file. All
@@ -56,6 +53,8 @@ result (Bool/Str): If success is true, result provides accompanying information
 # error message
 Maybe = namedtuple('Maybe', ['success','result'])
 
+args = get_arguments()
+
 # Load settings from slouchy.ini
 config              = ConfigObj('slouchy.ini')
 posture_reference   = float(config['MAIN']['posture_reference'])
@@ -63,7 +62,10 @@ allowed_variance    = float(config['MAIN']['allowed_variance'])
 lat_cerv_tol        = float(config['MAIN']['lat_cerv_tol'])
 face_cc_path        = str(config['MAIN']['cascade_path'])
 eye_cc_path         = str(config['MAIN']['eye_cascade_path'])
-camera_delay        = int(config['MAIN']['camera_delay'])
+camera_delay        = args.warm_up_time if args.warm_up_time\
+        else int(config['MAIN']['camera_delay'])
+
+TEXT_MODE = args.text_mode
 
 #video_device can be an int or a string, so try int, and if not assume string
 try:
@@ -74,8 +76,10 @@ except ValueError:
 cap           = cv2.VideoCapture(video_device)
 camera_width  = float(cap.get(3))
 camera_height = float(cap.get(4))
-print("camera_width:", camera_width)
-print("camera_height:", camera_height)
+
+if TEXT_MODE:
+  print('Camera field of view: {} high, {} wide'
+          .format(camera_height, int(camera_width)))
 cap.release()
 
 
@@ -102,10 +106,11 @@ def determine_distance(face):
   else:
     return 0 #TODO: fix this
 
-  print("x =", '{:d}'.format(x))
-  print("y =", '{:d}'.format(y))
-  print("w =", '{:d}'.format(w))
-  print("h =", '{:d}'.format(h))
+  if TEXT_MODE:
+    print('Face detected')
+    print('-------------')
+    print('    Position:   x = {:d}, y = {:d}'.format(x, y))
+    print('    Dimensions: w = {:d}, h = {:d}'.format(w, h))
 
   distance = (y**2 + w**2)**0.5
 
@@ -117,7 +122,7 @@ def get_face_width(MaybeFace):
     return MaybeFace
 
   (x, y, w, h) = MaybeFace.result
-  return Maybe(True, w)  
+  return Maybe(True, w)
 
 def take_picture(video_device):
   """
@@ -151,7 +156,7 @@ correctly.')
   # Make image grayscale for processing
   gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-  return Maybe(True, gray_image)  
+  return Maybe(True, gray_image)
 
 def determine_posture(MaybeImage):
   if MaybeImage.success:
@@ -211,17 +216,19 @@ def find_head_tilt(face):
   # lateral angle of the head. If one or none are detected, skip this. If
   # more are detected, assume any after the first two are false positives.
   if len(eyes) > 1:
-    print str(len(eyes)) + ' eyes detected'
     left  = eyes[0]
     right = eyes[1]
     print 'Left eye', left, 'Right eye', right
     slope = (left[1] - right[1]) / (left[0] - right[0])
     angle = abs(atan(slope))
+    if TEXT_MODE:
+      print('Eyes detected, indicating a lateral inclination of {}'
+              .format(angle))
     return angle
 
   return 0  # If both eyes couldn't be found, assume a level head
 
-# Detect if person is slouching 
+# Detect if person is slouching
 # MaybeFace -> MaybeSlouching
 def detect_slouching(MaybePos):
   """
@@ -249,9 +256,9 @@ def detect_slouching(MaybePos):
   c_min = posture_reference * (1.0 - allowed_variance)
   c_max = posture_reference * (1.0 + allowed_variance)
 
-  print("c_min:", c_min)
-  print("current_posture:", current_posture)
-  print("c_max:", c_max)
+  if TEXT_MODE:
+    print('    Measured distance: {}'.format(current_posture))
+    print('    Should be within {} and {}'.format(c_min, c_max))
 
   if c_min <= current_posture <= c_max:
     slouching = False
@@ -272,4 +279,4 @@ def main():
   return maybe_slouching
 
 if __name__ == '__main__':
-  main()  
+  main()
