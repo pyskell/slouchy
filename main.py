@@ -22,18 +22,19 @@ Arguments (unimplemented):
     -h, --help         Print a help message, then terminate.
 
 Attributes:
-    config (configobj.ConfigObj): Used to access slouchy's config file. All
+     CONFIG (configobj.ConfigObj): Used to access slouchy's config file. All
         other module level variable get their values from there.
-    posture_reference (float): The distance value for the subject when sitting
+    DISTANCE_REFERENCE (float): The distance value for the subject when sitting
         upright.
-    allowed_variance (float): The ammount of deviation from the reference
-        which will be tolerated before reporting the subject is slouching.
-    lat_cerv_tol (float): The amount lateral flexion of the cervical before
-        assuming slouching. Note: this and a few other values will be
+    THORACOLUMBAR_TOLERANCE (float): The ammount of deviation from the
+        reference which will be tolerated before reporting the subject is
+        slouching.
+    CERVICAL_TOLERANCE (float): The amount lateral flexion of the cervical
+        before assuming slouching. Note: this and a few other values will be
         integrated into a single model to better discern slouching.
-    face_cc_path (str): The path for the face cascade classifier.
-    eye_cc_path (str): The path for the eye cascade classifier.
-    camera_delay (int): The Δtime needed for the user camera to initialize.
+    FACE_CC_PATH (str): The path for the face cascade classifier.
+    EYE_CC_PATH (str): The path for the eye cascade classifier.
+    CAMERA_WARM_UP (int): The Δtime needed for the user camera to initialize.
 
 Modules communicate with named tuples called Maybe. It is designed to emulate
 the behavior of Maybe/Either constructs in functional languages.
@@ -56,22 +57,22 @@ Maybe = namedtuple('Maybe', ['success','result'])
 args = get_arguments()
 
 # Load settings from slouchy.ini
-config              = ConfigObj('slouchy.ini')
-posture_reference   = float(config['MAIN']['posture_reference'])
-allowed_variance    = float(config['MAIN']['allowed_variance'])
-lat_cerv_tol        = float(config['MAIN']['lat_cerv_tol'])
-face_cc_path        = str(config['MAIN']['cascade_path'])
-eye_cc_path         = str(config['MAIN']['eye_cascade_path'])
-camera_delay        = args.warm_up_time if args.warm_up_time\
-        else int(config['MAIN']['camera_delay'])
+CONFIG                  = ConfigObj('slouchy.ini')
+DISTANCE_REFERENCE      = float(CONFIG['MAIN']['distance_reference'])
+THORACOLUMBAR_TOLERANCE = float(CONFIG['MAIN']['thoracolumbar_tolerance'])
+CERVICAL_TOLERANCE      = float(CONFIG['MAIN']['cervical_tolerance'])
+FACE_CC_PATH            = str(CONFIG['MAIN']['face_cascade_path'])
+EYE_CC_PATH             = str(CONFIG['MAIN']['eye_cascade_path'])
+CAMERA_WARM_UP          = args.warm_up_time if args.warm_up_time\
+        else int(CONFIG['MAIN']['camera_warm_up'])
 
 TEXT_MODE = args.text_mode
 
 #video_device can be an int or a string, so try int, and if not assume string
 try:
-  video_device = int(config['MAIN']['video_device'])
+  video_device = int(CONFIG['MAIN']['video_device'])
 except ValueError:
-  video_device = str(config['MAIN']['video_device'])
+  video_device = str(CONFIG['MAIN']['video_device'])
 
 cap           = cv2.VideoCapture(video_device)
 camera_width  = float(cap.get(3))
@@ -139,8 +140,8 @@ def take_picture(video_device):
   cap = cv2.VideoCapture(video_device)
   cap.open(video_device)
 
-  if camera_delay > 0:        # Some cameras need to be given worm up time
-    time.sleep(camera_delay)
+  if CAMERA_WARM_UP > 0:        # Some cameras need to be given worm up time
+    time.sleep(CAMERA_WARM_UP)
 
   if not cap.isOpened():
     exit('Failed to open camera. Please make sure video_device is set \
@@ -186,7 +187,7 @@ def detect_face(image):
       coordinates of the largest face found. False and an error string if no
       faces are found.
   """
-  faceCascade = cv2.CascadeClassifier(face_cc_path) # Load face classifier
+  faceCascade = cv2.CascadeClassifier(FACE_CC_PATH) # Load face classifier
 
   faces = faceCascade.detectMultiScale(             # Detect faces in image
       image=image,                                  # and store info in a list
@@ -205,7 +206,7 @@ lighting.")
 
 def find_head_tilt(face):
   """Take one facial image and return the angle (only magnitude) of its tilt"""
-  classifier = cv2.CascadeClassifier(eye_cc_path)
+  classifier = cv2.CascadeClassifier(EYE_CC_PATH)
 
   if classifier.empty():
     return 0 # Don't complain, gracefully continue without this function
@@ -247,14 +248,14 @@ def detect_slouching(MaybePos):
   # print("y^2 + w^2 =", '{:d}'.format(current_posture))
   # print("Current posture / c_squared_reference:", '{:f}'
   #       .format(float(current_posture) / c_squared_reference))
-  # print("Current posture * allowed_variance:", '{:f}'
-  #   .format(float(current_posture * allowed_variance)))
+  # print("Current posture * THORACOLUMBAR_TOLERANCE:", '{:f}'
+  #   .format(float(current_posture * THORACOLUMBAR_TOLERANCE)))
 
   current_posture = MaybePos.result[0]
   tilt            = MaybePos.result[1]
 
-  c_min = posture_reference * (1.0 - allowed_variance)
-  c_max = posture_reference * (1.0 + allowed_variance)
+  c_min = DISTANCE_REFERENCE * (1.0 - THORACOLUMBAR_TOLERANCE)
+  c_max = DISTANCE_REFERENCE * (1.0 + THORACOLUMBAR_TOLERANCE)
 
   if TEXT_MODE:
     print('    Measured distance: {}'.format(current_posture))
@@ -265,7 +266,7 @@ def detect_slouching(MaybePos):
   else:
     slouching = True
 
-  if tilt > lat_cerv_tol:
+  if tilt > CERVICAL_TOLERANCE:
     slouching = True
 
   print("Slouching:", slouching)
