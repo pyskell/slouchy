@@ -1,5 +1,6 @@
 import cv2
 import time
+import imutils
 
 from collections import namedtuple
 from configobj import ConfigObj
@@ -105,6 +106,12 @@ def detect_face(MaybeImage):
   # Make image grayscale for processing
   gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
+
+  if imutils.is_cv3():
+        flag_for_detect = cv2.CASCADE_SCALE_IMAGE
+  else:
+        flag_for_detect = cv2.cv.CV_HAAR_SCALE_IMAGE
+
   # Detect faces in the image
   # faces will be an iterable object
   faces = faceCascade.detectMultiScale(
@@ -112,7 +119,7 @@ def detect_face(MaybeImage):
       scaleFactor=1.1,
       minNeighbors=5,
       minSize=(40, 40),
-      flags = cv2.cv.CV_HAAR_SCALE_IMAGE
+      flags = flag_for_detect
   )
 
   # We assume the largest face (at index zero) is the face we're interested in
