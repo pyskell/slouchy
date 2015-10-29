@@ -4,7 +4,7 @@ import time
 
 from collections import namedtuple
 from configobj   import ConfigObj
-from math        import atan
+from math        import atan, sqrt
 
 """
 Slouchy uses your webcam to determine if you are slouching and alerts you when
@@ -106,7 +106,8 @@ def determine_distance(MaybeFace):
   print("w =", '{:d}'.format(w))
   print("h =", '{:d}'.format(h))
 
-  distance = (y**2 + w**2)**0.5
+  # distance = (y**2 + w**2)**0.5
+  distance = sqrt(y**2 + w**2)
 
   return Maybe(True, distance)
 
@@ -160,23 +161,28 @@ def determine_posture(MaybeImage):
   else:
     return MaybeImage
 
-  maybe_face     = detect_face(MaybeImage)
-  maybe_distance = determine_distance(maybe_face) #Record face-camera distance
-
   # TODO: Factor this out or something? I don't like this...
+  maybe_face = detect_face(MaybeImage)
+  if maybe_face.success:
+    x, y, w, h = maybe_face.result   # Unpack the face coordinates
+    face_image = image[y:y+h, x:x+w] # Crop the image. Eyes are only on faces
+  else:
+    return Maybe(False, 'No face detected.')
+  
+  maybe_distance = determine_distance(maybe_face) #Get face-camera distance
   if maybe_distance.success:
     distance = maybe_distance.result
   else:
     return maybe_distance
 
-  if maybe_face.success:
-    x, y, w, h = maybe_face.result    # Unpack the face coordinates
-    face_image = image[y:y+h, x:x+w] # Crop the image. Eyes are only on faces
-    tilt       = find_head_tilt(face_image)  #Record lateral tilt of the head
+  maybe_tilt = find_head_tilt(face_image)  #Get lateral tilt of the head
+  if maybe_tilt.success:
+    tilt = maybe_tilt.result
+  else:
+    tilt = 0 # If error just ignore it and set to '0' for our purposes
 
-    return Maybe(True, {'distance' : distance, 'tilt' : tilt})
+  return Maybe(True, {'distance' : distance, 'tilt' : tilt})
 
-  return Maybe(False, 'No face detected.')
 
 # MaybeImage -> MaybeFace
 def detect_face(MaybeImage):
@@ -215,12 +221,14 @@ def detect_face(MaybeImage):
 lighting.")
 
 # FIX: Seems to only detect head tilting to the right?
+# face -> MaybeTilt
 def find_head_tilt(face):
   """Take one facial image and return the angle (only magnitude) of its tilt"""
   classifier = cv2.CascadeClassifier(eye_cascade_path)
 
   if classifier.empty():
-    return 0 # Don't complain, gracefully continue without this function
+    return Maybe(False, "Empty classifier")
+    # return 0 # Don't complain, gracefully continue without this function
 
   eyes = classifier.detectMultiScale(face)
 
@@ -234,12 +242,13 @@ def find_head_tilt(face):
     print 'Left eye', left, 'Right eye', right
     slope = (left[1] - right[1]) / (left[0] - right[0])
     angle = abs(atan(slope))
-    return angle
+    return Maybe(True, angle)
 
-  return 0  # If both eyes couldn't be found, assume a level head
+  return Maybe(False, "No eyes found")
+  # return 0  # If both eyes couldn't be found, assume a level head
 
 # Detect if person is slouching 
-# MaybeFace -> MaybeSlouching
+# MaybePos -> MaybeSlouching
 def detect_slouching(MaybePos):
   """
   Use provide postural information to determine if the subject is slouching.
