@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import cv2
 import time
+import config
 
 from collections import namedtuple
 from configobj   import ConfigObj
@@ -22,19 +23,19 @@ Arguments (unimplemented):
     -h, --help         Print a help message, then terminate.
 
 Attributes:
-     CONFIG (configobj.ConfigObj): Used to access slouchy's config file. All
+     config (configobj.ConfigObj): Used to access slouchy's config file. All
         other module level variable get their values from there.
-    DISTANCE_REFERENCE (float): The distance value for the subject when sitting
+    distance_reference (float): The distance value for the subject when sitting
         upright.
-    THORACOLUMBAR_TOLERANCE (float): The ammount of deviation from the
+    thoracolumbar_tolerance (float): The ammount of deviation from the
         reference which will be tolerated before reporting the subject is
         slouching.
-    CERVICAL_TOLERANCE (float): The amount lateral flexion of the cervical
+    cervical_tolerance (float): The amount lateral flexion of the cervical
         before assuming slouching. Note: this and a few other values will be
         integrated into a single model to better discern slouching.
-    FACE_CC_PATH (str): The path for the face cascade classifier.
-    EYE_CC_PATH (str): The path for the eye cascade classifier.
-    CAMERA_WARM_UP (int): The Δtime needed for the user camera to initialize.
+    face_cc_path (str): The path for the face cascade classifier.
+    eye_cc_path (str): The path for the eye cascade classifier.
+    camera_warm_up (int): The Δtime needed for the user camera to initialize.
 
 Modules communicate with named tuples called Maybe. It is designed to emulate
 the behavior of Maybe/Either constructs in functional languages.
@@ -54,31 +55,13 @@ result (Bool/Str): If success is true, result provides accompanying information
 # error message
 Maybe = namedtuple('Maybe', ['success','result'])
 
-args = get_arguments()
+#config.text_mode = config.ARGS.text_mode
 
-# Load settings from slouchy.ini
-CONFIG                  = ConfigObj('slouchy.ini')
-DISTANCE_REFERENCE      = float(CONFIG['MAIN']['distance_reference'])
-THORACOLUMBAR_TOLERANCE = float(CONFIG['MAIN']['thoracolumbar_tolerance'])
-CERVICAL_TOLERANCE      = float(CONFIG['MAIN']['cervical_tolerance'])
-FACE_CC_PATH            = str(CONFIG['MAIN']['face_cascade_path'])
-EYE_CC_PATH             = str(CONFIG['MAIN']['eye_cascade_path'])
-CAMERA_WARM_UP          = args.warm_up_time if args.warm_up_time\
-        else int(CONFIG['MAIN']['camera_warm_up'])
-
-TEXT_MODE = args.text_mode
-
-#video_device can be an int or a string, so try int, and if not assume string
-try:
-  video_device = int(CONFIG['MAIN']['video_device'])
-except ValueError:
-  video_device = str(CONFIG['MAIN']['video_device'])
-
-cap           = cv2.VideoCapture(video_device)
+cap           = cv2.VideoCapture(config.video_device)
 camera_width  = float(cap.get(3))
 camera_height = float(cap.get(4))
 
-if TEXT_MODE:
+if config.text_mode:
   print('Camera field of view: {} high, {} wide'
           .format(camera_height, int(camera_width)))
 cap.release()
@@ -107,7 +90,7 @@ def determine_distance(face):
   else:
     return 0 #TODO: fix this
 
-  if TEXT_MODE:
+  if config.text_mode:
     print('Face detected')
     print('-------------')
     print('    Position:   x = {:d}, y = {:d}'.format(x, y))
@@ -140,15 +123,15 @@ def take_picture(video_device):
   cap = cv2.VideoCapture(video_device)
   cap.open(video_device)
 
-  if CAMERA_WARM_UP > 0:        # Some cameras need to be given worm up time
-    time.sleep(CAMERA_WARM_UP)
+  if config.camera_warm_up > 0: # Some cameras need to be given worm up time
+    time.sleep(config.camera_warm_up)
 
   if not cap.isOpened():
     exit('Failed to open camera. Please make sure video_device is set \
 correctly.')
 
-  ret, image = cap.read()     # Grab and decode frame from the camera
-  cap.release()               # Close the camera
+  ret, image = cap.read()      # Grab and decode frame from the camera
+  cap.release()                # Close the camera
 
   if not ret:
     return Maybe(False, 'Camera unexpectedly disconnected.')
@@ -187,7 +170,7 @@ def detect_face(image):
       coordinates of the largest face found. False and an error string if no
       faces are found.
   """
-  faceCascade = cv2.CascadeClassifier(FACE_CC_PATH) # Load face classifier
+  faceCascade = cv2.CascadeClassifier(config.face_cc_path) # Load face classifier
 
   faces = faceCascade.detectMultiScale(             # Detect faces in image
       image=image,                                  # and store info in a list
@@ -206,7 +189,7 @@ lighting.")
 
 def find_head_tilt(face):
   """Take one facial image and return the angle (only magnitude) of its tilt"""
-  classifier = cv2.CascadeClassifier(EYE_CC_PATH)
+  classifier = cv2.CascadeClassifier(config.eye_cc_path)
 
   if classifier.empty():
     return 0 # Don't complain, gracefully continue without this function
@@ -222,7 +205,7 @@ def find_head_tilt(face):
     print 'Left eye', left, 'Right eye', right
     slope = (left[1] - right[1]) / (left[0] - right[0])
     angle = abs(atan(slope))
-    if TEXT_MODE:
+    if config.text_mode:
       print('Eyes detected, indicating a lateral inclination of {}'
               .format(angle))
     return angle
@@ -248,16 +231,16 @@ def detect_slouching(MaybePos):
   # print("y^2 + w^2 =", '{:d}'.format(current_posture))
   # print("Current posture / c_squared_reference:", '{:f}'
   #       .format(float(current_posture) / c_squared_reference))
-  # print("Current posture * THORACOLUMBAR_TOLERANCE:", '{:f}'
-  #   .format(float(current_posture * THORACOLUMBAR_TOLERANCE)))
+  # print("Current posture * thoracolumbar_tolerance:", '{:f}'
+  #   .format(float(current_posture * thoracolumbar_tolerance)))
 
   current_posture = MaybePos.result[0]
   tilt            = MaybePos.result[1]
 
-  c_min = DISTANCE_REFERENCE * (1.0 - THORACOLUMBAR_TOLERANCE)
-  c_max = DISTANCE_REFERENCE * (1.0 + THORACOLUMBAR_TOLERANCE)
+  c_min = config.distance_reference * (1.0 - config.thoracolumbar_tolerance)
+  c_max = config.distance_reference * (1.0 + config.thoracolumbar_tolerance)
 
-  if TEXT_MODE:
+  if config.text_mode:
     print('    Measured distance: {}'.format(current_posture))
     print('    Should be within {} and {}'.format(c_min, c_max))
 
@@ -266,14 +249,14 @@ def detect_slouching(MaybePos):
   else:
     slouching = True
 
-  if tilt > CERVICAL_TOLERANCE:
+  if tilt > config.cervical_tolerance:
     slouching = True
 
   print("Slouching:", slouching)
   return Maybe(True, slouching)
 
 def main():
-  maybe_image = take_picture(video_device)
+  maybe_image = take_picture(config.video_device)
   posture = determine_posture(maybe_image)
   maybe_slouching = detect_slouching(posture)
 
