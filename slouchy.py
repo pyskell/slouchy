@@ -13,7 +13,7 @@ from main import config
 
 # Qt4 threading advice from here: https://joplaete.wordpress.com/2010/07/21/threading-with-pyqt4/
 
-check_frequency = int(config['MAIN']['check_frequency'])
+check_frequency = int(config['MAIN']['poll_rate'])
 # alert_duration  = int(config['MAIN']['alert_duration'])
 
 class TrayIcon(QtGui.QSystemTrayIcon):
@@ -35,7 +35,7 @@ class TrayIcon(QtGui.QSystemTrayIcon):
 
   def alert(self):
     # Alerting by receiving a signal
-    self.connect(self.workThread, QtCore.SIGNAL("slouching_alert(QString, QString)"), 
+    self.connect(self.workThread, QtCore.SIGNAL("slouching_alert(QString, QString)"),
                  self.showMessage)
     self.workThread.start()
 
@@ -48,7 +48,7 @@ class TrayIcon(QtGui.QSystemTrayIcon):
 class WrapperWidget(QtGui.QWidget):
   def __init__(self, parent=None):
     QtGui.QWidget.__init__(self, parent)
-   
+
     self.setGeometry(100, 100, 100, 100)
     self.setWindowTitle('threads')
     # self.show()
@@ -62,7 +62,7 @@ class SlouchingThread(QtCore.QThread):
   def __del__(self):
     self.wait()
 
-  # I can't get the timing right but I think having this 
+  # I can't get the timing right but I think having this
   # will help kill our while loop in run()
   # This hopefully avoids a race condition where the camera is stuck active
   # if we quit while it's taking a picture.
@@ -79,12 +79,12 @@ class SlouchingThread(QtCore.QThread):
 
       if slouching.success:
         if slouching.result == True:
-          self.emit(QtCore.SIGNAL('slouching_alert(QString, QString)'), 
+          self.emit(QtCore.SIGNAL('slouching_alert(QString, QString)'),
                     "You're slouching", "Stop slouching!")
       else:
-        self.emit(QtCore.SIGNAL('slouching_alert(QString, QString)'), 
+        self.emit(QtCore.SIGNAL('slouching_alert(QString, QString)'),
                   "Error encountered", str(slouching.result))
-      
+
       time.sleep(check_frequency)
 
 app = QtGui.QApplication(sys.argv)

@@ -25,7 +25,8 @@ for key, val in args.iteritems():
         globals()[key] = args[key] if args[key] else config['MAIN'][key]
 
 # Some settings need to be floats (not strings)
-for i in ['distance_reference','thoracolumbar_tolerance','cervical_tolerance']:
+for i in ['distance_reference', 'thoracolumbar_tolerance',\
+        'cervical_tolerance', 'camera_warm_up']:
     globals()[i] = float(globals()[i])
 
 # video_device can be either an int or str, so try int but fall back on str
