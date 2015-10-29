@@ -33,8 +33,8 @@ Attributes:
     cervical_tolerance (float): The amount lateral flexion of the cervical
         before assuming slouching. Note: this and a few other values will be
         integrated into a single model to better discern slouching.
-    face_cc_path (str): The path for the face cascade classifier.
-    eye_cc_path (str): The path for the eye cascade classifier.
+    face_cascade_path (str): The path for the face cascade classifier.
+    eye_cascade_path (str): The path for the eye cascade classifier.
     camera_warm_up (int): The Δtime needed for the user camera to initialize.
 
 Modules communicate with named tuples called Maybe. It is designed to emulate
@@ -170,7 +170,7 @@ def detect_face(image):
       coordinates of the largest face found. False and an error string if no
       faces are found.
   """
-  faceCascade = cv2.CascadeClassifier(config.face_cc_path) # Load face classifier
+  faceCascade = cv2.CascadeClassifier(config.face_cascade_path) # Load face classifier
 
   faces = faceCascade.detectMultiScale(             # Detect faces in image
       image=image,                                  # and store info in a list
@@ -189,7 +189,7 @@ lighting.")
 
 def find_head_tilt(face):
   """Take one facial image and return the angle (only magnitude) of its tilt"""
-  classifier = cv2.CascadeClassifier(config.eye_cc_path)
+  classifier = cv2.CascadeClassifier(config.eye_cascade_path)
 
   if classifier.empty():
     return 0 # Don't complain, gracefully continue without this function

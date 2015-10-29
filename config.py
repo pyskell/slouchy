@@ -4,27 +4,36 @@ from configobj import ConfigObj
 #from main import video_device, determine_posture, take_picture, detect_face
 from arg  import get_arguments
 
-# Get all command-line arguments, which specify the interface mode (GUI or CLI)
-# and overide the settings in slouchy.ini
+# Get all command-line arguments. arg.get_arguments() returns a Namespace
+# object containg True or False values for the interface mode (GUI or CLI)
+# and numeric/string values for selectively overiding the slouchy.ini settings
 args = get_arguments()
-print args
+
+# Determin if the user wants status output on the command line
 text_mode = args.text_mode
 
-# Load settings from slouchy.ini
-config                  = ConfigObj('slouchy.ini')
-distance_reference      = float(config['MAIN']['distance_reference'])
-thoracolumbar_tolerance = float(config['MAIN']['thoracolumbar_tolerance'])
-cervical_tolerance      = float(config['MAIN']['cervical_tolerance'])
-face_cc_path            = str(config['MAIN']['face_cascade_path'])
-eye_cc_path             = str(config['MAIN']['eye_cascade_path'])
-camera_warm_up          = args.warm_up_time if args.warm_up_time\
-        else int(config['MAIN']['camera_warm_up'])
+# Load settings from the config file (default to slouchy.ini)
+config = ConfigObj(args.config_file) if args.config_file\
+        else ConfigObj('slouchy.ini')
+
+# Dict-ize args (for looping)
+args = vars(args)
+
+# Overide config file settings per the command line
+for key, val in args.iteritems():
+    if key in config['MAIN'].keys():
+        globals()[key] = args[key] if args[key] else config['MAIN'][key]
+
+# Some settings need to be floats (not strings)
+for i in ['distance_reference','thoracolumbar_tolerance','cervical_tolerance']:
+    globals()[i] = float(globals()[i])
 
 # video_device can be either an int or str, so try int but fall back on str
 try:
-  video_device = int(config['MAIN']['video_device'])
+  video_device = int(video_device)
 except ValueError:
-  video_device = str(config['MAIN']['video_device'])
+  video_device = str(video_device)
+
 
 # Set initial values
 def setup():
@@ -42,6 +51,3 @@ def setup():
     return maybe_current_posture
 
   config.write()
-
-#if __name__ == '__main__':
-#  setup()
