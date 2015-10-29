@@ -77,6 +77,7 @@ print("camera_width:", camera_width)
 print("camera_height:", camera_height)
 cap.release()
 
+
 # Calculate MaybeFace -> MaybeDistance
 def determine_distance(MaybeFace):
   """
@@ -111,15 +112,13 @@ def determine_distance(MaybeFace):
   return Maybe(True, distance)
 
 def get_face_width(MaybeFace):
-  if MaybeFace.success:
-    (x, y, w, h) = MaybeFace.result
-  else:
+  """Find and return width value for the detected face."""
+  if not MaybeFace.success:
     return MaybeFace
 
+  x, y, w, h = MaybeFace.result
   return Maybe(True, w)  
 
-# Take a picture with the camera. 
-# Ideally this is where we always transition from the impure to "pure" calculations.
 # video_device -> MaybeImage
 def take_picture(video_device):
   """
@@ -149,7 +148,6 @@ correctly.')
   if not ret:
     return Maybe(False, 'Camera unexpectedly disconnected.')
 
-  cap.release()
 
   # Make image grayscale for processing
   gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -207,21 +205,12 @@ def detect_face(MaybeImage):
 
   faceCascade = cv2.CascadeClassifier(face_cascade_path) # Load face classifier
 
-  major_ver, _, _ = (cv2.__version__).split('.')
-
-  if int(major_ver) < 3:
-    flag_for_detect = cv2.cv.CV_HAAR_SCALE_IMAGE
-  else:
-    flag_for_detect = cv2.CASCADE_SCALE_IMAGE
-
-  # Detect faces in the image
-  # faces will be an iterable object
-  faces = faceCascade.detectMultiScale(
-      image=image,
+  faces = faceCascade.detectMultiScale(             # Detect faces in image
+      image=image,                                  # and store info in a list
       scaleFactor=1.1,
       minNeighbors=5,
       minSize=(40, 40),
-      flags = flag_for_detect
+      flags=cv2.cv.CV_HAAR_SCALE_IMAGE
   )
 
   try:                                     # Assume largest face is the subject
