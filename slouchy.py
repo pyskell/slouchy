@@ -8,8 +8,12 @@ from PyQt4 import QtGui, QtCore
 
 # Local imports
 import config
-from main import main as maybe_slouching
 from main import take_picture, detect_face, determine_posture, config
+from main import config as config_file
+
+# This fixes an UnboundLocalError / referenced before assignment error...
+# Directly importing slouching_results doesn't work?
+from main import slouching_results as slouching_results_what
 
 # Qt4 threading advice from here: https://joplaete.wordpress.com/2010/07/21/threading-with-pyqt4/
 
@@ -22,7 +26,7 @@ def setup():
   maybe_face            = detect_face(maybe_image)
   maybe_current_posture = determine_posture(maybe_face)
 
-  #config.write()
+  config_file.write()
 
 
 class TrayIcon(QtGui.QSystemTrayIcon):
@@ -47,12 +51,6 @@ class TrayIcon(QtGui.QSystemTrayIcon):
     self.connect(self.workThread, QtCore.SIGNAL("slouching_alert(QString, QString)"),
                  self.showMessage)
     self.workThread.start()
-
-  # def showMessage(*args, **kwargs):
-  #   if 'msecs' not in kwargs:
-  #     kwargs['msecs'] = alert_duration
-
-  #   QtGui.QSystemTrayIcon.showMessage(*args, **kwargs)
 
 class WrapperWidget(QtGui.QWidget):
   def __init__(self, parent=None):
@@ -84,15 +82,31 @@ class SlouchingThread(QtCore.QThread):
     while self.run_loop:
 
       # TODO: Possibly collect a certain number of readings and then only bother people if all or most of the readings indicate slouching. Best 2 out of 3?
-      slouching = maybe_slouching()
+      maybe_slouching = slouching_results_what()
 
-      if slouching.success:
-        if slouching.result == True:
+      if maybe_slouching.success:
+        slouching_results  = maybe_slouching.result
+        slouching_messages = str('')
+
+        body_slouching = slouching_results.get('body_slouching')
+        head_tilting   = slouching_results.get('head_tilting')
+
+        if body_slouching:
+          slouching_messages = slouching_messages + "Your body is slouched!"
+
+        if head_tilting:
+          if len(slouching_messages) > 0:
+            slouching_messages = slouching_messages + '\n'
+
+          slouching_messages = slouching_messages + "Your head is tilted!"
+
+        if body_slouching or head_tilting:
           self.emit(QtCore.SIGNAL('slouching_alert(QString, QString)'),
-                    "You're slouching", "Stop slouching!")
+                  "Your posture is off!", str(slouching_messages))
+
       else:
         self.emit(QtCore.SIGNAL('slouching_alert(QString, QString)'),
-                  "Error encountered", str(slouching.result))
+                  "Error encountered", str(maybe_slouching.result))
 
       time.sleep(float(check_frequency))
 

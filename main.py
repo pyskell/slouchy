@@ -5,10 +5,10 @@ import config
 
 from collections import namedtuple
 from configobj   import ConfigObj
-from math        import atan
+from math        import atan, sqrt
 
 """
-Slouchy uses your webcam to determin if you are slouching and alerts you when
+Slouchy uses your webcam to determine if you are slouching and alerts you when
 you are. This project is still in active development and not feature complete.
 
 Example:
@@ -21,7 +21,7 @@ Arguments (unimplemented):
     -h, --help         Print a help message, then terminate.
 
 Attributes:
-     config (configobj.ConfigObj): Used to access slouchy's config file. All
+    config (configobj.ConfigObj): Used to access slouchy's config file. All
         other module level variable get their values from there.
     distance_reference (float): The distance value for the subject when sitting
         upright.
@@ -53,8 +53,6 @@ result (Bool/Str): If success is true, result provides accompanying information
 # error message
 Maybe = namedtuple('Maybe', ['success','result'])
 
-#config.text_mode = config.ARGS.text_mode
-
 cap           = cv2.VideoCapture(config.video_device)
 camera_width  = float(cap.get(3))
 camera_height = float(cap.get(4))
@@ -65,28 +63,27 @@ if config.text_mode:
 cap.release()
 
 
-# Calculate current_posture MaybeFace -> MaybeCSquared
-def determine_distance(face):
+def determine_distance(MaybeFace):
   """
-  Use hight and width information of face to find its distance from the camera.
+  Use height and width information of face to find its distance from the camera.
 
-  This uses the in-frame hight and width of the face previously captured by the
+  This uses the in-frame height and width of the face previously captured by the
   camera to as the leg and base of a right triangle. Using a² + b² = c², the
   distance of the face from the camera is determined, in abstract terms. The
-  numbers produced are not used to determin distance in any real-world unit.
+  numbers produced are not used to determine distance in any real-world unit.
   All that matters here are the relationships.
 
   Args:
-      face [int]: The x, y, width, and hight of the region in the previously
-          taken image determined to depict a face.
-
+      MaybeFace tuple: Containing success status, and results.
+                       If successful, results contain the x, y, width, and height of the
+                       region in the previously taken image determined to depict a face.
   Returns:
-      int: the face-camera distance.
+      MaybeDistance tuple: The face-camera distance on success, error message on failure.
   """
-  if face.success:
-    (x, y, w, h) = face.result
+  if MaybeFace.success:
+    (x, y, w, h) = MaybeFace.result
   else:
-    return 0 #TODO: fix this
+    return MaybeFace
 
   if config.text_mode:
     print('Face detected')
@@ -94,18 +91,24 @@ def determine_distance(face):
     print('    Position:   x = {:d}, y = {:d}'.format(x, y))
     print('    Dimensions: w = {:d}, h = {:d}'.format(w, h))
 
-  distance = (y**2 + w**2)**0.5
+  # distance = (y**2 + w**2)**0.5
+  distance = sqrt(y**2 + w**2)
 
-  return distance
+  return Maybe(True, distance)
 
 def get_face_width(MaybeFace):
-  """Find and return width value of for the detected face."""
-  if not MaybeFace.success:
+  if MaybeFace.success:
+    (x, y, w, h) = MaybeFace.result
+  else:
     return MaybeFace
 
   (x, y, w, h) = MaybeFace.result
   return Maybe(True, w)
 
+
+# Take a picture with the camera.
+# Ideally this is where we always transition from the impure to "pure" calculations.
+# video_device -> MaybeImage
 def take_picture(video_device):
   """
   Open indicated camera, caputure a frame from it, and return an image.
@@ -134,63 +137,96 @@ correctly.')
   if not ret:
     return Maybe(False, 'Camera unexpectedly disconnected.')
 
+  cap.release()
 
   # Make image grayscale for processing
   gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
   return Maybe(True, gray_image)
 
+
+# MaybeImage -> MaybePosture
 def determine_posture(MaybeImage):
   if MaybeImage.success:
     image = MaybeImage.result
   else:
     return MaybeImage
 
-  face_rect  = detect_face(image)
-  distance   = determine_distance(face_rect) #Record face-camera distance
-  if face_rect.success:
-    x, y, w, h = face_rect.result    # Unpack the face coordinates
+  # TODO: Factor this out or something? I don't like this...
+  maybe_face = detect_face(MaybeImage)
+  if maybe_face.success:
+    x, y, w, h = maybe_face.result   # Unpack the face coordinates
     face_image = image[y:y+h, x:x+w] # Crop the image. Eyes are only on faces
-    tilt       = find_head_tilt(face_image)  #Record lateral tilt of the head
+  else:
+    return Maybe(False, 'No face detected.')
 
-    return Maybe(True, [distance, tilt])
-  return Maybe(False, 'No face detected.')
+  maybe_distance = determine_distance(maybe_face) #Get face-camera distance
+  if maybe_distance.success:
+    distance = maybe_distance.result
+  else:
+    return maybe_distance
 
-def detect_face(image):
+  maybe_tilt = find_head_tilt(face_image)  #Get lateral tilt of the head
+  if maybe_tilt.success:
+    tilt = maybe_tilt.result
+  else:
+    tilt = 0 # If error just ignore it and set to '0' for our purposes
+
+  return Maybe(True, {'distance' : distance, 'tilt' : tilt})
+
+
+def detect_face(MaybeImage):
   """
   Take an image and return positional information for the largest face in it.
 
   Args:
-      image: An image grabbed from the local camera.
+      MaybeImage: An image grabbed from the local camera.
 
   Returns:
       Maybe tuple((bool, [int]) or (bool, str)): True and list of positional
       coordinates of the largest face found. False and an error string if no
       faces are found.
   """
+
+  if MaybeImage.success:
+    image = MaybeImage.result
+  else:
+    return MaybeImage
+
   faceCascade = cv2.CascadeClassifier(config.face_cascade_path) # Load face classifier
 
-  faces = faceCascade.detectMultiScale(             # Detect faces in image
-      image=image,                                  # and store info in a list
+  major_ver, _, _ = (cv2.__version__).split('.')
+
+  if int(major_ver) < 3:
+    flag_for_detect = cv2.cv.CV_HAAR_SCALE_IMAGE
+  else:
+    flag_for_detect = cv2.CASCADE_SCALE_IMAGE
+
+  # Detect faces in the image
+  # faces will be an iterable object
+  faces = faceCascade.detectMultiScale(
+      image=image,
       scaleFactor=1.1,
       minNeighbors=5,
       minSize=(40, 40),
-      flags = cv2.cv.CV_HAAR_SCALE_IMAGE
+      flags = flag_for_detect
   )
 
-  try:                                     # Assume lageest face is the subject
-    face = faces[0]
+  try:                                     # Assume largest face is the subject
+    face = faces[0]                        # [0] index is largest face.
     return Maybe(True, face)
   except IndexError:
     return Maybe(False, "No faces detected. This may be due to low or uneven \
 lighting.")
+
 
 def find_head_tilt(face):
   """Take one facial image and return the angle (only magnitude) of its tilt"""
   classifier = cv2.CascadeClassifier(config.eye_cascade_path)
 
   if classifier.empty():
-    return 0 # Don't complain, gracefully continue without this function
+    return Maybe(False, "Empty classifier")
+    # return 0 # Don't complain, gracefully continue without this function
 
   eyes = classifier.detectMultiScale(face)
 
@@ -203,37 +239,36 @@ def find_head_tilt(face):
     print 'Left eye', left, 'Right eye', right
     slope = (left[1] - right[1]) / (left[0] - right[0])
     angle = abs(atan(slope))
+
     if config.text_mode:
       print('Eyes detected, indicating a lateral inclination of {}'
               .format(angle))
-    return angle
 
-  return 0  # If both eyes couldn't be found, assume a level head
+    return Maybe(True, angle)
 
-# Detect if person is slouching
-# MaybeFace -> MaybeSlouching
+  return Maybe(False, "No eyes found")
+  # return 0  # If both eyes couldn't be found, assume a level head
+
+
 def detect_slouching(MaybePos):
   """
-  Use provide postural information to dertermin if the subject is slouching.
+  Use provide postural information to determine if the subject is slouching.
 
   Args:
       MaybePos Maybe(bool, [float, float]: Head distance and lateral tilt.
 
   Returns:
-      Maybe(bool, bool) or Maybe(bool, str): The dertermination of slouching
+      Maybe(bool, dict) or Maybe(bool, str): The determination of slouching
       or an error message from somewhere upstream.
+      dict will contain booleans for 'body_slouching', and 'head_tilting'
   """
-  if not MaybePos.success:
+  if MaybePos.success:
+    posture = MaybePos.result
+  else:
     return MaybePos
 
-  # print("y^2 + w^2 =", '{:d}'.format(current_posture))
-  # print("Current posture / c_squared_reference:", '{:f}'
-  #       .format(float(current_posture) / c_squared_reference))
-  # print("Current posture * thoracolumbar_tolerance:", '{:f}'
-  #   .format(float(current_posture * thoracolumbar_tolerance)))
-
-  current_posture = MaybePos.result[0]
-  tilt            = MaybePos.result[1]
+  current_posture = posture.get('distance')
+  tilt            = posture.get('tilt')
 
   c_min = config.distance_reference * (1.0 - config.thoracolumbar_tolerance)
   c_max = config.distance_reference * (1.0 + config.thoracolumbar_tolerance)
@@ -243,22 +278,27 @@ def detect_slouching(MaybePos):
     print('    Should be within {} and {}'.format(c_min, c_max))
 
   if c_min <= current_posture <= c_max:
-    slouching = False
+    body_slouching = False
   else:
-    slouching = True
+    body_slouching = True
 
+  # TODO: Adjust so these two types of slouching alert users with different messages.
   if tilt > config.cervical_tolerance:
-    slouching = True
+    head_tilting = True
+  else:
+    head_tilting = False
 
-  print("Slouching:", slouching)
-  return Maybe(True, slouching)
+  print("body_slouching:", body_slouching)
+  print("head_tilting:", head_tilting)
+  return Maybe(True, {'body_slouching' : body_slouching, 'head_tilting' : head_tilting})
 
-def main():
-  maybe_image = take_picture(config.video_device)
-  posture = determine_posture(maybe_image)
-  maybe_slouching = detect_slouching(posture)
+# MaybeSlouching
+def slouching_results():
+  maybe_image     = take_picture(config.video_device)
+  maybe_posture   = determine_posture(maybe_image)
+  maybe_slouching = detect_slouching(maybe_posture)
 
   return maybe_slouching
 
 if __name__ == '__main__':
-  main()
+  slouching_results()
