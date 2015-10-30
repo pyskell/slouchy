@@ -4,7 +4,6 @@ import time
 import config
 
 from collections import namedtuple
-from configobj   import ConfigObj
 from math        import atan, sqrt
 
 """
@@ -91,7 +90,6 @@ def determine_distance(MaybeFace):
     print('    Position:   x = {:d}, y = {:d}'.format(x, y))
     print('    Dimensions: w = {:d}, h = {:d}'.format(w, h))
 
-  # distance = (y**2 + w**2)**0.5
   distance = sqrt(y**2 + w**2)
 
   return Maybe(True, distance)
@@ -226,7 +224,6 @@ def find_head_tilt(face):
 
   if classifier.empty():
     return Maybe(False, "Empty classifier")
-    # return 0 # Don't complain, gracefully continue without this function
 
   eyes = classifier.detectMultiScale(face)
 
@@ -247,7 +244,6 @@ def find_head_tilt(face):
     return Maybe(True, angle)
 
   return Maybe(False, "No eyes found")
-  # return 0  # If both eyes couldn't be found, assume a level head
 
 
 def detect_slouching(MaybePos):

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-from argparse import *
-
+from argparse import ArgumentParser
 
 def get_arguments():
     parser = ArgumentParser(description = 'Slouchy uses your webcam t'
@@ -18,7 +17,7 @@ def get_arguments():
     # Settings overrides
     parser.add_argument('--config-file',             '-s', type = str,
             help = 'The location of a config file for slouchy.')
-    parser.add_argument('--video-device',            '-d', type = int,
+    parser.add_argument('--video-device',            '-d', type = str,
             help = 'Value for specifying the camera to use.')
     parser.add_argument('--poll-rate',               '-p', type = int,
             help = 'Time to wait between checking user posture.')
@@ -30,7 +29,7 @@ def get_arguments():
                    'ts spinal mobility, this is used as a proxy for d'
                    'etecting slouching.')
     parser.add_argument('--thoracolumbar-tolerance', '-l', type = float,
-            help = 'The ammount of deviation from the reference which'
+            help = 'The amount of deviation from the reference which'
                    ' will be tolerated before registering the lower a'
                    'nd mid back of the subject is slouching.')
     parser.add_argument('--cervical-tolerance',      '-c', type = float,

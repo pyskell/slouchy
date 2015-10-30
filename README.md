@@ -8,7 +8,7 @@ You need to install the following system-wide:
 
 * Python 2.7
 * [Qt4](http://doc.qt.io/qt-4.8/installation.html) and [PyQt4](http://pyqt.sourceforge.net/Docs/PyQt4/installation.html)
-* [OpenCV](http://docs.opencv.org/doc/tutorials/introduction/table_of_content_introduction/table_of_content_introduction.html)
+* [OpenCV 2 or 3](http://docs.opencv.org/doc/tutorials/introduction/table_of_content_introduction/table_of_content_introduction.html)
 * [OpenCV-Python](https://opencv-python-tutroals.readthedocs.org/en/latest/py_tutorials/py_setup/py_table_of_contents_setup/py_table_of_contents_setup.html#py-table-of-content-setup)
 
 ## Debian Dependencies

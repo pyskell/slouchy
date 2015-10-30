@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
+
 import sys
 import signal
 import time
@@ -8,8 +9,7 @@ from PyQt4 import QtGui, QtCore
 
 # Local imports
 import config
-from main import take_picture, detect_face, determine_posture, config
-from main import config as config_file
+from main import take_picture, determine_posture
 
 # This fixes an UnboundLocalError / referenced before assignment error...
 # Directly importing slouching_results doesn't work?
@@ -19,14 +19,21 @@ from main import slouching_results as slouching_results_what
 
 check_frequency = config.poll_rate
 
-
-# Set initial values
+# Set initial values to slouchy.ini
 def setup():
   maybe_image           = take_picture(config.video_device)
-  maybe_face            = detect_face(maybe_image)
-  maybe_current_posture = determine_posture(maybe_face)
+  maybe_current_posture = determine_posture(maybe_image)
 
-  config_file.write()
+  if maybe_current_posture.success:
+    distance_reference = str(maybe_current_posture.result.get('distance'))
+    config.config_file['MAIN']['distance_reference'] = distance_reference
+    print("Reference value detected as:", maybe_current_posture.result)
+
+  else:
+    print("Error:", maybe_current_posture.result)
+    return maybe_current_posture
+
+  config.config_file.write()
 
 
 class TrayIcon(QtGui.QSystemTrayIcon):

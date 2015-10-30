@@ -9,27 +9,33 @@ from arg import get_arguments
 # and numeric/string values for selectively overiding the slouchy.ini settings
 args = get_arguments()
 
-# Determin if the user wants status output on the command line
+# Determine if the user wants status output on the command line
 text_mode = args.text_mode
 
 # Load settings from the config file (default to slouchy.ini)
-config = ConfigObj(args.config_file) if args.config_file\
-        else ConfigObj('slouchy.ini')
+if args.config_file:
+  config_file = ConfigObj(args.config_file) 
+else:
+  config_file = ConfigObj('slouchy.ini')
 
 # Dict-ize args (for looping)
 args = vars(args)
 
 # Overide config file settings per the command line
 for key, val in args.iteritems():
-    if key in config['MAIN'].keys():
-        globals()[key] = args[key] if args[key] else config['MAIN'][key]
+  if key in config_file['MAIN'].keys():
+    globals()[key] = args[key] if args[key] else config_file['MAIN'][key]
 
 # Some settings need to be floats (not strings)
 for i in ['distance_reference', 'thoracolumbar_tolerance',\
-        'cervical_tolerance', 'camera_warm_up']:
-    globals()[i] = float(globals()[i])
+          'cervical_tolerance', 'camera_warm_up']:
+  globals()[i] = float(globals()[i])
+
+# poll_rate needs to be an int
+globals()['poll_rate'] = int(globals()['poll_rate'])
 
 # video_device can be either an int or str, so try int but fall back on str
+video_device = globals()['video_device']
 try:
   video_device = int(video_device)
 except ValueError:
