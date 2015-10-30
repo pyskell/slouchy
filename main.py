@@ -1,14 +1,38 @@
 # -*- coding: utf-8 -*-
 import cv2
 import time
+import config
 
 from collections import namedtuple
-from configobj   import ConfigObj
 from math        import atan, sqrt
 
 """
 Slouchy uses your webcam to determine if you are slouching and alerts you when
 you are. This project is still in active development and not feature complete.
+
+Example:
+    $ ./slouchy.py [arguments]
+
+Arguments (unimplemented):
+    -t, --text-mode    Put slouchy in text mode, disabling all GUI features.
+    -g, --gui          Put slouchy in GUI mode (the default). GUI mode normally
+                       detaches slouchy from the terminal.
+    -h, --help         Print a help message, then terminate.
+
+Attributes:
+    config (configobj.ConfigObj): Used to access slouchy's config file. All
+        other module level variable get their values from there.
+    distance_reference (float): The distance value for the subject when sitting
+        upright.
+    thoracolumbar_tolerance (float): The ammount of deviation from the
+        reference which will be tolerated before reporting the subject is
+        slouching.
+    cervical_tolerance (float): The amount lateral flexion of the cervical
+        before assuming slouching. Note: this and a few other values will be
+        integrated into a single model to better discern slouching.
+    face_cascade_path (str): The path for the face cascade classifier.
+    eye_cascade_path (str): The path for the eye cascade classifier.
+    camera_warm_up (int): The Δtime needed for the user camera to initialize.
 
 Modules communicate with named tuples called Maybe. It is designed to emulate
 the behavior of Maybe/Either constructs in functional languages.
@@ -20,33 +44,6 @@ result (Bool/Str): If success is true, result provides accompanying information
                    If success is false, result will be a string containing an
                    error message.
 """
-# Example:
-#     $ ./slouchy.py [arguments]
-
-# Arguments (unimplemented):
-#     -t    Put slouchy in text-only mode. All GUI features are disabled. This
-#           mode also implicitly activates -v (verbose mode).
-#     -g    Put slouchy in GUI mode (the default). GUI mode normally detaches
-#           slouchy from the terminal.
-#     -v    Put slouchy in verbose mode. It will output all important information
-#           on the command-line. If in GUI mode, slouchy will remain connected to
-#           the terminal (providing additional addional information to the GUI).
-#           If in text-only mode, this option is redundant.
-#     -h    Print a help message, then terminate.
-
-# Attributes:
-#     config (configobj.ConfigObj): Used to access slouchy's config file. All
-#         other module level variable get their values from there.
-#     posture_reference (float): The distance value for the subject when sitting
-#         upright.
-#     allowed_variance (float): The ammount of deviation from the reference
-#         which will be tolerated before reporting the subject is slouching.
-#     lat_cerv_tol (float): The amount lateral flexion of the cervical before
-#         assuming slouching. Note: this and a few other values will be
-#         integrated into a single model to better discern slouching.
-#     face_cascade_path (str): The path for the face cascade classifier.
-#     eye_cascade_path(str): The path for the eye cascade classifier.
-#     camera_delay (int): The Δtime needed for the user camera to initialize.
 
 # Some pseudo-functional programming here: use of namedtuples to simulate the
 # Maybe/Either construct throughout this program. Success is always True or
@@ -55,29 +52,16 @@ result (Bool/Str): If success is true, result provides accompanying information
 # error message
 Maybe = namedtuple('Maybe', ['success','result'])
 
-# Load settings from slouchy.ini
-config              = ConfigObj('slouchy.ini')
-posture_reference   = float(config['MAIN']['posture_reference'])
-allowed_variance    = float(config['MAIN']['allowed_variance'])
-lat_cerv_tol        = float(config['MAIN']['lat_cerv_tol'])
-face_cascade_path   = str(config['MAIN']['face_cascade_path'])
-eye_cascade_path    = str(config['MAIN']['eye_cascade_path'])
-camera_delay        = int(config['MAIN']['camera_delay'])
-
-#video_device can be an int or a string, so try int, and if not assume string
-try:
-  video_device = int(config['MAIN']['video_device'])
-except ValueError:
-  video_device = str(config['MAIN']['video_device'])
-
-cap           = cv2.VideoCapture(video_device)
+cap           = cv2.VideoCapture(config.video_device)
 camera_width  = float(cap.get(3))
 camera_height = float(cap.get(4))
-print("camera_width:", camera_width)
-print("camera_height:", camera_height)
+
+if config.text_mode:
+  print('Camera field of view: {} high, {} wide'
+          .format(camera_height, int(camera_width)))
 cap.release()
 
-# Calculate MaybeFace -> MaybeDistance
+
 def determine_distance(MaybeFace):
   """
   Use height and width information of face to find its distance from the camera.
@@ -89,7 +73,7 @@ def determine_distance(MaybeFace):
   All that matters here are the relationships.
 
   Args:
-      MaybeFace tuple: Containing success status, and results. 
+      MaybeFace tuple: Containing success status, and results.
                        If successful, results contain the x, y, width, and height of the
                        region in the previously taken image determined to depict a face.
   Returns:
@@ -100,12 +84,12 @@ def determine_distance(MaybeFace):
   else:
     return MaybeFace
 
-  print("x =", '{:d}'.format(x))
-  print("y =", '{:d}'.format(y))
-  print("w =", '{:d}'.format(w))
-  print("h =", '{:d}'.format(h))
+  if config.text_mode:
+    print('Face detected')
+    print('-------------')
+    print('    Position:   x = {:d}, y = {:d}'.format(x, y))
+    print('    Dimensions: w = {:d}, h = {:d}'.format(w, h))
 
-  # distance = (y**2 + w**2)**0.5
   distance = sqrt(y**2 + w**2)
 
   return Maybe(True, distance)
@@ -116,9 +100,11 @@ def get_face_width(MaybeFace):
   else:
     return MaybeFace
 
-  return Maybe(True, w)  
+  (x, y, w, h) = MaybeFace.result
+  return Maybe(True, w)
 
-# Take a picture with the camera. 
+
+# Take a picture with the camera.
 # Ideally this is where we always transition from the impure to "pure" calculations.
 # video_device -> MaybeImage
 def take_picture(video_device):
@@ -136,15 +122,15 @@ def take_picture(video_device):
   cap = cv2.VideoCapture(video_device)
   cap.open(video_device)
 
-  if camera_delay > 0:        # Some cameras need to be given worm up time
-    time.sleep(camera_delay)
+  if config.camera_warm_up > 0: # Some cameras need to be given worm up time
+    time.sleep(config.camera_warm_up)
 
   if not cap.isOpened():
     exit('Failed to open camera. Please make sure video_device is set \
 correctly.')
 
-  ret, image = cap.read()     # Grab and decode frame from the camera
-  cap.release()               # Close the camera
+  ret, image = cap.read()      # Grab and decode frame from the camera
+  cap.release()                # Close the camera
 
   if not ret:
     return Maybe(False, 'Camera unexpectedly disconnected.')
@@ -154,7 +140,8 @@ correctly.')
   # Make image grayscale for processing
   gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-  return Maybe(True, gray_image)  
+  return Maybe(True, gray_image)
+
 
 # MaybeImage -> MaybePosture
 def determine_posture(MaybeImage):
@@ -170,7 +157,7 @@ def determine_posture(MaybeImage):
     face_image = image[y:y+h, x:x+w] # Crop the image. Eyes are only on faces
   else:
     return Maybe(False, 'No face detected.')
-  
+
   maybe_distance = determine_distance(maybe_face) #Get face-camera distance
   if maybe_distance.success:
     distance = maybe_distance.result
@@ -186,7 +173,6 @@ def determine_posture(MaybeImage):
   return Maybe(True, {'distance' : distance, 'tilt' : tilt})
 
 
-# MaybeImage -> MaybeFace
 def detect_face(MaybeImage):
   """
   Take an image and return positional information for the largest face in it.
@@ -205,7 +191,7 @@ def detect_face(MaybeImage):
   else:
     return MaybeImage
 
-  faceCascade = cv2.CascadeClassifier(face_cascade_path) # Load face classifier
+  faceCascade = cv2.CascadeClassifier(config.face_cascade_path) # Load face classifier
 
   major_ver, _, _ = (cv2.__version__).split('.')
 
@@ -231,15 +217,13 @@ def detect_face(MaybeImage):
     return Maybe(False, "No faces detected. This may be due to low or uneven \
 lighting.")
 
-# FIX: Seems to only detect head tilting to the right?
-# face -> MaybeTilt
+
 def find_head_tilt(face):
   """Take one facial image and return the angle (only magnitude) of its tilt"""
-  classifier = cv2.CascadeClassifier(eye_cascade_path)
+  classifier = cv2.CascadeClassifier(config.eye_cascade_path)
 
   if classifier.empty():
     return Maybe(False, "Empty classifier")
-    # return 0 # Don't complain, gracefully continue without this function
 
   eyes = classifier.detectMultiScale(face)
 
@@ -247,19 +231,21 @@ def find_head_tilt(face):
   # lateral angle of the head. If one or none are detected, skip this. If
   # more are detected, assume any after the first two are false positives.
   if len(eyes) > 1:
-    print str(len(eyes)) + ' eyes detected'
     left  = eyes[0]
     right = eyes[1]
     print 'Left eye', left, 'Right eye', right
     slope = (left[1] - right[1]) / (left[0] - right[0])
     angle = abs(atan(slope))
+
+    if config.text_mode:
+      print('Eyes detected, indicating a lateral inclination of {}'
+              .format(angle))
+
     return Maybe(True, angle)
 
   return Maybe(False, "No eyes found")
-  # return 0  # If both eyes couldn't be found, assume a level head
 
-# Detect if person is slouching 
-# MaybePos -> MaybeSlouching
+
 def detect_slouching(MaybePos):
   """
   Use provide postural information to determine if the subject is slouching.
@@ -280,12 +266,12 @@ def detect_slouching(MaybePos):
   current_posture = posture.get('distance')
   tilt            = posture.get('tilt')
 
-  c_min = posture_reference * (1.0 - allowed_variance)
-  c_max = posture_reference * (1.0 + allowed_variance)
+  c_min = config.distance_reference * (1.0 - config.thoracolumbar_tolerance)
+  c_max = config.distance_reference * (1.0 + config.thoracolumbar_tolerance)
 
-  print("c_min:", c_min)
-  print("current_posture:", current_posture)
-  print("c_max:", c_max)
+  if config.text_mode:
+    print('    Measured distance: {}'.format(current_posture))
+    print('    Should be within {} and {}'.format(c_min, c_max))
 
   if c_min <= current_posture <= c_max:
     body_slouching = False
@@ -293,7 +279,7 @@ def detect_slouching(MaybePos):
     body_slouching = True
 
   # TODO: Adjust so these two types of slouching alert users with different messages.
-  if tilt > lat_cerv_tol:
+  if tilt > config.cervical_tolerance:
     head_tilting = True
   else:
     head_tilting = False
@@ -304,11 +290,11 @@ def detect_slouching(MaybePos):
 
 # MaybeSlouching
 def slouching_results():
-  maybe_image = take_picture(video_device)
-  maybe_posture = determine_posture(maybe_image)
+  maybe_image     = take_picture(config.video_device)
+  maybe_posture   = determine_posture(maybe_image)
   maybe_slouching = detect_slouching(maybe_posture)
 
   return maybe_slouching
 
 if __name__ == '__main__':
-  slouching_results() 
+  slouching_results()

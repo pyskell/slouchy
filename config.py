@@ -1,24 +1,42 @@
+# -*- coding: utf-8 -*-
 from configobj import ConfigObj
 
-# Local imports
-from main import video_device, determine_posture, take_picture #, detect_face
+# Local import
+from arg import get_arguments
 
-# Set initial values
-def setup():
-  config = ConfigObj('slouchy.ini')
+# Get all command-line arguments. arg.get_arguments() returns a Namespace
+# object containg True or False values for the interface mode (GUI or CLI)
+# and numeric/string values for selectively overiding the slouchy.ini settings
+args = get_arguments()
 
-  maybe_image     = take_picture(video_device)
-  # maybe_face      = detect_face(maybe_image)
-  maybe_current_posture = determine_posture(maybe_image)
+# Determine if the user wants status output on the command line
+text_mode = args.text_mode
 
-  if maybe_current_posture.success:
-    config['MAIN']['posture_reference'] = str(maybe_current_posture.result.get('distance'))
-    print("Reference value detected as:", maybe_current_posture.result)
-  else:
-    print("Error:", maybe_current_posture.result)
-    return maybe_current_posture
+# Load settings from the config file (default to slouchy.ini)
+if args.config_file:
+  config_file = ConfigObj(args.config_file) 
+else:
+  config_file = ConfigObj('slouchy.ini')
 
-  config.write()
+# Dict-ize args (for looping)
+args = vars(args)
 
-if __name__ == '__main__':
-  setup()
+# Overide config file settings per the command line
+for key, val in args.iteritems():
+  if key in config_file['MAIN'].keys():
+    globals()[key] = args[key] if args[key] else config_file['MAIN'][key]
+
+# Some settings need to be floats (not strings)
+for i in ['distance_reference', 'thoracolumbar_tolerance',\
+          'cervical_tolerance', 'camera_warm_up']:
+  globals()[i] = float(globals()[i])
+
+# poll_rate needs to be an int
+globals()['poll_rate'] = int(globals()['poll_rate'])
+
+# video_device can be either an int or str, so try int but fall back on str
+video_device = globals()['video_device']
+try:
+  video_device = int(video_device)
+except ValueError:
+  video_device = str(video_device)
