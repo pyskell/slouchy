@@ -7,8 +7,6 @@ from collections import namedtuple
 from configobj   import ConfigObj
 from math        import atan
 
-from arg import get_arguments
-
 """
 Slouchy uses your webcam to determin if you are slouching and alerts you when
 you are. This project is still in active development and not feature complete.

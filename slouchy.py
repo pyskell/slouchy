@@ -7,14 +7,23 @@ import time
 from PyQt4 import QtGui, QtCore
 
 # Local imports
-from config import setup
+import config
 from main import main as maybe_slouching
-from main import config
+from main import take_picture, detect_face, determine_posture, config
 
 # Qt4 threading advice from here: https://joplaete.wordpress.com/2010/07/21/threading-with-pyqt4/
 
-check_frequency = int(config['MAIN']['poll_rate'])
-# alert_duration  = int(config['MAIN']['alert_duration'])
+check_frequency = config.poll_rate
+
+
+# Set initial values
+def setup():
+  maybe_image           = take_picture(config.video_device)
+  maybe_face            = detect_face(maybe_image)
+  maybe_current_posture = determine_posture(maybe_face)
+
+  #config.write()
+
 
 class TrayIcon(QtGui.QSystemTrayIcon):
   def __init__(self, icon, parent=None):
@@ -85,7 +94,7 @@ class SlouchingThread(QtCore.QThread):
         self.emit(QtCore.SIGNAL('slouching_alert(QString, QString)'),
                   "Error encountered", str(slouching.result))
 
-      time.sleep(check_frequency)
+      time.sleep(float(check_frequency))
 
 app = QtGui.QApplication(sys.argv)
 signal.signal(signal.SIGINT, signal.SIG_DFL) #Force PYQT to handle SIGINT (CTRL+C)

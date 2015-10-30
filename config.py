@@ -1,8 +1,8 @@
+# -*- coding: utf-8 -*-
 from configobj import ConfigObj
 
-# Local imports
-#from main import video_device, determine_posture, take_picture, detect_face
-from arg  import get_arguments
+# Local import
+from arg import get_arguments
 
 # Get all command-line arguments. arg.get_arguments() returns a Namespace
 # object containg True or False values for the interface mode (GUI or CLI)
@@ -34,21 +34,3 @@ try:
   video_device = int(video_device)
 except ValueError:
   video_device = str(video_device)
-
-
-# Set initial values
-def setup():
-  config = ConfigObj('slouchy.ini')
-
-  maybe_image     = take_picture(video_device)
-  maybe_face      = detect_face(maybe_image)
-  maybe_current_posture = determine_posture(maybe_face)
-
-  if maybe_current_posture.success:
-    config['MAIN']['posture_reference'] = str(maybe_current_posture.result)
-    print("Reference value detected as:", maybe_current_posture.result)
-  else:
-    print("Error:", maybe_current_posture.result)
-    return maybe_current_posture
-
-  config.write()
