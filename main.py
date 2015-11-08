@@ -193,7 +193,7 @@ def detect_face(MaybeImage):
 
   faceCascade = cv2.CascadeClassifier(config.face_cascade_path) # Load face classifier
 
-  major_ver, _, _ = (cv2.__version__).split('.')
+  major_ver = (cv2.__version__).split('.')[0]
 
   if int(major_ver) < 3:
     flag_for_detect = cv2.cv.CV_HAAR_SCALE_IMAGE
