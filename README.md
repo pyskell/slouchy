@@ -16,7 +16,7 @@ On Debian-based distros the below apt-get should work:
 
 `apt-get install python2.7 python2.7-dev libqt4-core libqt4-dev opencv-data libopencv-core2.4 libopencv-dev python-opencv`
 
-`pip install -r requirements.txt`
+`pip2 install -r requirements.txt`
 
 ## Mac Dependencies
 
