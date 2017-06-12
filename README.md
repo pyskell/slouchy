@@ -20,6 +20,10 @@ On Debian-based distros the below apt-get should work:
 
 ## Mac Dependencies
 
+`python macPreInstall.py`
+
+**OR**
+
 `brew tap homebrew/science`
 
 `brew install python qt pyqt opencv`
