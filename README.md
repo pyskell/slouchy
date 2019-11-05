@@ -1,7 +1,7 @@
 [![Code Health](https://landscape.io/github/pyskell/slouchy/master/landscape.svg?style=flat)](https://landscape.io/github/pyskell/slouchy/master)
 
 # slouchy
-Slouchy uses your webcam to check if you're slouching and alert you if you are. This project is still in active development and not feature complete.
+Slouchy uses your webcam to check if you're slouching and alert you if you are.
 
 # Requirements
 You need to install the following system-wide:
